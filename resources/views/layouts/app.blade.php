@@ -181,6 +181,7 @@
                 {{ $slot }}
             </main>
         </div>
+        @livewireScripts
     </body>
-    @livewireScripts
+
 </html>

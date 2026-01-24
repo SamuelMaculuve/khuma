@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\Admin\Users;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DashboardController;
-
+use App\Http\Controllers\InstanceController;
 Route::get('/', function () {
     return view('welcome');
 });
@@ -14,12 +14,19 @@ Route::get('/whatsapp', function () {
     return view('admin.whatsapp.index');
 });
 
+Route::get('/whatsapp-show', function () {
+    return view('admin.whatsapp.show');
+});
+
 Route::get('dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/users', Users::class)->name('users.index');
     Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{user}/status', [UserController::class, 'updateStatus'])->name('users.updateStatus');
+    Route::post('/instance/connect', [InstanceController::class, 'connect'])->name('instance.connect');
+//    Route::get('/connect/connect/index', [InstanceController::class, 'connectShow'])->name('connect.connect.show');
+    Route::resource('instance', InstanceController::class);
 });
 
 Route::middleware('auth')->group(function () {

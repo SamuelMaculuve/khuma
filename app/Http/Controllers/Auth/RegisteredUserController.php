@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Companies;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -34,6 +35,9 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
+        $companies = Companies::create([
+            'name' => $request->company_name,
+        ]);
 
         $user = User::create([
             'name' => $request->name,
@@ -41,6 +45,7 @@ class RegisteredUserController extends Controller
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'status' => 'pending',
+            'company_id' => $companies->id,
         ]);
 
         // Atribui o role "subscriber"

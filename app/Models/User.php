@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
-
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -19,7 +20,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name', 'email', 'phone', 'password', 'status'
+        'name', 'email', 'phone', 'password', 'status','company_id'
     ];
 
     /**
@@ -49,4 +50,28 @@ class User extends Authenticatable
         return $this->hasOne(Subscription::class);
     }
 
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Companies::class);
+    }
+
+    public function clients(): HasMany
+    {
+        return $this->hasMany(Clients::class);
+    }
+
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Messages::class, 'sender_id');
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(Notes::class);
+    }
+
+    public function leadHistories(): HasMany
+    {
+        return $this->hasMany(LeadHistories::class);
+    }
 }

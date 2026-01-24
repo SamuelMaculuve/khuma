@@ -10,6 +10,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/whatsapp', function () {
+    return view('admin.whatsapp.index');
+});
 
 Route::get('dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 

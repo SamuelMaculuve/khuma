@@ -16,11 +16,14 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string("name");
             $table->string("systemName")->default("khuma");
-            $table->string("adminField01")->nullable();
-            $table->string("adminField02")->nullable();
-            $table->string("fingerprintProfile")->default("chrome");
-            $table->string("browser")->default("chrome");
+            $table->string("status")->nullable();
+            $table->string("token")->nullable();
+            $table->string("profileName")->nullable();
+            $table->string("profilePic")->nullable();
+            $table->string("info")->nullable();
+            $table->boolean("isBusiness")->default(false);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

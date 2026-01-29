@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Instance;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class InstanceController extends Controller
@@ -71,40 +73,42 @@ class InstanceController extends Controller
     {
         $company = auth()->user()->company;
 
-        $curl = curl_init();
-
-        curl_setopt_array($curl, [
-            CURLOPT_URL => "https://free.uazapi.com/instance/init",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => json_encode([
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'admintoken' => 'ZaW1qwTEkuq7Ub1cBUuyMiK5bNSu3nnMQ9lh7klElc2clSRV8t'
+            ])->post( 'https://free.uazapi.com/instance/init', [
                 'name' => 'khuma-'.$company->name,
                 'systemName' => 'khuma',
                 'fingerprintProfile' => 'chrome',
                 'browser' => 'chrome'
-            ]),
-            CURLOPT_HTTPHEADER => [
-                "Accept: application/json",
-                "Content-Type: application/json",
-                "admintoken: ZaW1qwTEkuq7Ub1cBUuyMiK5bNSu3nnMQ9lh7klElc2clSRV8t"
-            ],
-        ]);
+            ]);
 
-        $response = curl_exec($curl);
-        Log::info("Instance info", ['response'=> $response]);
-        $err = curl_error($curl);
+            if ($response->successful()) {
 
-        curl_close($curl);
+                $instance = new Instance();
+                $data = $response->json();
 
-        if ($err) {
-            echo "cURL Error #:" . $err;
-        } else {
-            echo $response;
+                $instance->user_id = Auth::user()->id;
+                $instance->token = $data['token'] ?? null;
+                $instance->status = $data['instance']['status'] ?? null;
+                $instance->profilePic = $data['instance']['profilePicUrl'] ?? null;
+                $instance->isBusiness = $data['instance']['isBusiness'] ?? null;
+                $instance->profileName = $data['instance']['profileName'] ?? null;
+                $instance->name = $data['instance']['name'] ?? null;
+                $instance->info = $data['info'] ?? null;
+                $instance->save();
+
+            } else {
+                Log::info('Erro ao conectar: ' . $response->body());
+            }
+
+        } catch (\Exception $e) {
+            Log::info('Erro: ' . $e->getMessage());
         }
+
+        return  redirect()->back();
     }
 
     /**

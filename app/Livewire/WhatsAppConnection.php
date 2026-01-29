@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -9,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppConnection extends Component
 {
     public $phone = '258848293580';
-    public $token = 'ca750e72-935e-4723-923a-5fccd3742b39';
+    public $currentInstance = '';
     public $baseUrl = 'https://free.uazapi.com';
 
     public $connected = false;
@@ -24,6 +25,8 @@ class WhatsAppConnection extends Component
 
     public function mount()
     {
+        $this->currentInstance = Auth::user()->instance;
+
         $this->checkStatus();
     }
 
@@ -37,7 +40,7 @@ class WhatsAppConnection extends Component
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
-                'token' => $this->token,
+                'token' => $this->currentInstance->token,
             ])->post($this->baseUrl . '/instance/connect', [
                 'phone' => $this->phone
             ]);
@@ -49,6 +52,7 @@ class WhatsAppConnection extends Component
                 $this->loggedIn = $data['loggedIn'] ?? false;
                 $this->manualQrcode = $data['instance']['qrcode'] ?? null; // Guardamos o QR code manual
                 $this->qrcode = $this->manualQrcode; // Exibimos o QR code manual
+
             } else {
                 $this->error = 'Erro ao conectar: ' . $response->body();
             }
@@ -67,19 +71,40 @@ class WhatsAppConnection extends Component
         try {
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
-                'token' => $this->token,
+                'token' => $this->currentInstance->token,
             ])->post($this->baseUrl . '/instance/disconnect');
 
             if ($response->successful()) {
                 $data = $response->json();
-                $this->instanceData = $data['instance'] ?? null;
-                $this->connected = false;
-                $this->loggedIn = false;
-                $this->qrcode = null;
-                $this->manualQrcode = null; // Limpa o QR code manual
+                $this->cleanVariables($data);
+
             } else {
                 $this->error = 'Erro ao desconectar: ' . $response->body();
             }
+        } catch (\Exception $e) {
+            $this->error = 'Erro: ' . $e->getMessage();
+        }
+
+        $this->loading = false;
+    }
+
+    public function deleteInstance()
+    {
+        $this->loading = true;
+        $this->error = null;
+
+        try {
+
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'token' => $this->currentInstance->token,
+            ])->delete($this->baseUrl . '/instance');
+
+            $this->currentInstance->delete();
+            $this->cleanVariables();
+
+            Log::info('ERROR DELETE INSTANCE:', ['response' => $response]);
+
         } catch (\Exception $e) {
             $this->error = 'Erro: ' . $e->getMessage();
         }
@@ -92,7 +117,7 @@ class WhatsAppConnection extends Component
         try {
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
-                'token' => $this->token,
+                'token' => $this->currentInstance->token,
             ])->get($this->baseUrl . '/instance/status');
 
             if ($response->successful()) {
@@ -106,6 +131,13 @@ class WhatsAppConnection extends Component
                 if ($this->connected && $this->loggedIn) {
                     $this->manualQrcode = null;
                     $this->qrcode = null;
+
+                    $this->currentInstance->profilePic = $data['instance']['profilePicUrl'] ?? null;
+                    $this->currentInstance->status = $data['instance']['status'];
+                    $this->currentInstance->isBusiness = $data['instance']['isBusiness'];
+                    $this->currentInstance->profileName = $data['instance']['profileName'];
+                    $this->currentInstance->update();
+
                 } else {
                     // Se temos um QR code manual
                     if ($this->manualQrcode) {
@@ -130,7 +162,15 @@ class WhatsAppConnection extends Component
         }
     }
 
-
+    public function cleanVariables($data=null)
+    {
+        $this->instanceData = $data['instance'] ?? null;
+        $this->connected = false;
+        $this->loggedIn = false;
+        $this->qrcode = null;
+        $this->manualQrcode = null; // Limpa o QR code manual
+        $this->currentInstance = null;
+    }
 
     public function render()
     {

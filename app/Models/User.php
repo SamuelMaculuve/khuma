@@ -74,4 +74,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LeadHistories::class);
     }
+
+    public function instance()
+    {
+        return $this->hasOne(Instance::class);
+    }
 }

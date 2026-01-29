@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             InitialSeeder::class,
-            ChannelsTableSeeder::class,
+//            ChannelsTableSeeder::class,
         ]);
     }
 }

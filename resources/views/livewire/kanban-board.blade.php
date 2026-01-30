@@ -77,44 +77,46 @@
                             class="bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-move hover:shadow-md transition-shadow"
                             ondragstart="dragStart(event, {{ $item['id'] }}, '{{ $stateName }}')"
                         >
-                            <!-- Cabeçalho do Item -->
-                            <div class="flex justify-between items-start mb-2">
-                                <h4 class="font-medium text-gray-900">{{ $item['title'] }}</h4>
-                                <span class="text-sm font-semibold text-blue-600">#{{ $item['number'] }}</span>
-                            </div>
+                            <a href="{{ route('lead.show',$item['id']) }}">
+                                <!-- Cabeçalho do Item -->
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-medium text-gray-900">{{ $item['title'] }}</h4>
+                                    <span class="text-sm font-semibold text-blue-600">#{{ $item['id'] }}</span>
 
-                            <!-- Detalhes do Item -->
-                            @if($item['requester'])
-                                <p class="text-sm text-gray-600 mb-1">
-                                    {{ $item['requester'] }}
-                                </p>
-                            @endif
-
-                            @if($item['service'])
-                                <div class="flex items-center mb-2">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        {{ $item['icon'] === 'fenix' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' }}">
-                                        {{ $item['service'] }}
-                                    </span>
                                 </div>
-                            @endif
 
-                            @if($item['link'])
-                                <a href="{{ $item['link'] }}" target="_blank" class="text-sm text-blue-500 hover:text-blue-700 hover:underline block mb-2">
-                                    {{ $item['link'] }}
-                                </a>
-                            @endif
+                                <!-- Detalhes do Item -->
+                                @if($item['description'])
+                                    <p class="text-sm text-gray-600 mb-1">
+                                        {{ $item['description'] }}
+                                    </p>
+                                @endif
 
-                            <!-- Rodapé do Item -->
-                            <div class="flex justify-between items-center pt-2 border-t border-gray-200">
-                                <span class="text-xs text-gray-500">{{ $item['time'] }}</span>
-                                <div class="flex items-center text-gray-400">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                    </svg>
-                                    <span class="text-xs">Arraste</span>
+                                {{--                            @if($item['description'])--}}
+                                {{--                                <div class="flex items-center mb-2">--}}
+                                {{--                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">--}}
+                                {{--                                        {{ $item['description'] }}--}}
+                                {{--                                    </span>--}}
+                                {{--                                </div>--}}
+                                {{--                            @endif--}}
+
+                                {{--                            @if($item['link'])--}}
+                                {{--                                <a href="{{ $item['link'] }}" target="_blank" class="text-sm text-blue-500 hover:text-blue-700 hover:underline block mb-2">--}}
+                                {{--                                    {{ $item['link'] }}--}}
+                                {{--                                </a>--}}
+                                {{--                            @endif--}}
+
+                                <!-- Rodapé do Item -->
+                                <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+                                    <span class="text-xs text-gray-500">{{ $item['time'] }}</span>
+                                    <div class="flex items-center text-gray-400">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                        <span class="text-xs">Arraste</span>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                     @endforeach
 

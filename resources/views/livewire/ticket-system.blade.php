@@ -146,10 +146,6 @@
 {{--                                        </div>--}}
 {{--                                    </div>--}}
 {{--                                </div>--}}
-
-
-
-
                             </div>
 
                         </div>
@@ -219,7 +215,7 @@
 
             </div>
         </div>
-
+        <div wire:poll.2s="loadMessages"></div>
 
     </div>
 
@@ -281,4 +277,6 @@
             setTimeout(scrollToBottom, 300);
         });
     </script>
+
+
 </div>

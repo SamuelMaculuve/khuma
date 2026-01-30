@@ -1,6 +1,6 @@
 <x-app-layout>
 
-    <livewire:ticket-system />
+    <livewire:ticket-system :lead="$lead" />
 
 </x-app-layout>
 

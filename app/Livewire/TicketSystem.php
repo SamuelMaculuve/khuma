@@ -2,30 +2,21 @@
 
 namespace App\Livewire;
 
+use App\Models\Messages;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class TicketSystem extends Component
 {
-    public $ticket = [
-        'id' => 20129,
-        'title' => 'Timeouts no servidor de Primavera',
-        'status' => 'pending', // pending, resolved, escalated
-        'priority' => 'high', // low, medium, high
-        'assigned_to' => 'Zenildo Nhabomba',
-        'team' => 'Equipa de Apoio ao Cliente',
-        'helpdesk' => 'HelpDesk IT',
-        'type' => 'Problema',
-        'tags' => ['SRV_PRIMAVERA'],
-        'client' => 'Transcom S.A., Zenildo Nhabomba',
-        'phone' => '844642763',
-        'document' => '',
-        'provider_ticket' => 'https://zibi.desk2u.com/workspace/tickets/20129',
-        'path' => 'Property 3',
-        'reason' => 'Aguarda feedback da Cegid',
-        'max_open_time' => 'Tempo Maximo em Aberto',
-        'max_resolved_time' => 'Tempo Maximo Em Resolvido',
-        'resolved_date' => '13-06-2024',
-    ];
+    public $lead;
+
+    public $currentInstance;
+
+    public $ticket = [];
 
     public $statuses = [
         ['id' => 'open', 'name' => 'Open', 'color' => 'gray'],
@@ -37,74 +28,13 @@ class TicketSystem extends Component
     public $newMessage = '';
     public $showSubtickets = false;
 
-    public $messages = [
-        [
-            'id' => 1,
-            'date' => '21 de agosto de 2024',
-            'author' => 'Zenildo Nhabomba',
-            'time_ago' => 'há 1 ano',
-            'content' => 'Email enviado ao João da Cegid a solicitar apoio, aguardamos feedback.',
-            'type' => 'message'
-        ],
-        [
-            'id' => 2,
-            'date' => '23 de julho de 2024',
-            'author' => 'Zenildo Nhabomba',
-            'time_ago' => 'há 1 ano',
-            'content' => 'Anotado.',
-            'type' => 'note'
-        ],
-        [
-            'id' => 3,
-            'date' => '24 de junho de 2024',
-            'author' => 'csmith@transcom.co.mz',
-            'time_ago' => 'há 1 ano',
-            'content' => '@Zenildo Nhabomba pfv tenha muita atenção para anotar a data e hora exacta da aplicação destas medidas, no ticket de Desk2U. Já falamos sobre isto em outros momentos.',
-            'type' => 'message'
-        ],
-        [
-            'id' => 4,
-            'date' => '24 de junho de 2024',
-            'author' => 'Zenildo Nhabomba',
-            'time_ago' => 'há 1 ano',
-            'content' => 'Vamos também aplicar a redução dos logs',
-            'type' => 'note'
-        ],
-        [
-            'id' => 5,
-            'date' => '24 de junho de 2024',
-            'author' => 'Zenildo Nhabomba',
-            'time_ago' => 'há 1 ano',
-            'content' => 'Etapa Alterada • Pending → Resolved (Etapa)',
-            'type' => 'status_change'
-        ],
-        [
-            'id' => 6,
-            'date' => '24 de junho de 2024',
-            'author' => 'Zenildo Nhabomba',
-            'time_ago' => 'há 1 ano',
-            'content' => 'Foi feita a reindexação da Base de dados, vou passar para resolved enquanto validamos se esse problema fica resolvido.',
-            'type' => 'message'
-        ],
-        [
-            'id' => 7,
-            'date' => '17 de junho de 2024',
-            'author' => 'Timilde Malbaze',
-            'time_ago' => 'há 1 ano',
-            'content' => 'Mudei o estado por engano.',
-            'type' => 'note'
-        ],
-        [
-            'id' => 8,
-            'date' => '17 de junho de 2024',
-            'author' => 'Timilde Malbaze',
-            'time_ago' => 'há 1 ano',
-            'content' => 'Etapa Alterada • Escalated → Pending (Etapa)',
-            'type' => 'status_change'
-        ],
-    ];
+    public $leadId;
 
-    public function sendMessage()
+    public $messages = [];
+    public $channel = 'whatsapp'; // default
+    public $direction = 'outbound'; // default direction
+
+    public function sendMessage1()
     {
         if (!empty($this->newMessage)) {
             $this->messages[] = [
@@ -134,6 +64,184 @@ class TicketSystem extends Component
         ];
     }
 
+    public function mount($lead = null)
+    {
+        $this->lead = $lead;
+
+        $this->ticket = [
+            'id' => $lead->id,
+            'title' => $lead->title,
+
+            // status do ticket
+            'status' => match ($lead->status) {
+                'new', 'contacted' => 'pending',
+                'qualified', 'proposal', 'negotiation' => 'pending',
+                'won' => 'resolved',
+                'lost' => 'escalated',
+                default => 'pending',
+            },
+
+            // prioridade simples (podes melhorar)
+            'priority' => $lead->value > 50000 ? 'high' : 'medium',
+
+            // campos fixos / sistema
+            'assigned_to' => auth()->user()->name ?? 'Não atribuído',
+            'team' => 'Equipa Comercial',
+            'helpdesk' => 'CRM',
+            'type' => 'Lead',
+
+            'tags' => [$lead->source],
+
+            'client' => optional($lead->client)->name,
+            'phone' => optional($lead->client)->phone,
+
+            'document' => '',
+            'provider_ticket' => $lead->reference,
+            'path' => 'CRM > Leads',
+            'reason' => $lead->description,
+
+            'max_open_time' => '72h',
+            'max_resolved_time' => '7 dias',
+
+            'resolved_date' => $lead->close_date
+                ? Carbon::parse($lead->close_date)->format('d-m-Y')
+                : null,
+        ];
+
+        $this->leadId = 1;
+
+        $this->currentInstance = Auth::user()->instance;
+
+        $this->loadMessages();
+    }
+
+    //TODO: FILTRAR POR LEAD, MAKE WORK COMO DEVE SER...
+    public function loadMessages()
+    {
+        Log::info("\n \n ============= Polly this ni\igga");
+        // Carregar mensagens do banco de dados
+        $dbMessages = Messages::where('sender_id', auth()->user()->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($message) {
+                return [
+                    'id' => $message->id,
+                    'date' => $message->created_at->format('d \d\e F \d\e Y'),
+                    'author' => $message->sender->name ?? $message->sender->email,
+                    'time_ago' => $message->created_at->diffForHumans(),
+                    'content' => $message->content,
+                    'type' => $this->determineMessageType($message->channel, $message->metadata),
+                    'channel' => $message->channel,
+                    'direction' => $message->direction
+                ];
+            })
+            ->toArray();
+
+        // Combinar com mensagens estáticas (notes e status changes)
+        $this->messages = array_merge($dbMessages, $this->getStaticMessages());
+
+        // Ordenar por data
+        usort($this->messages, function ($a, $b) {
+            return strtotime($b['date']) - strtotime($a['date']);
+        });
+    }
+
+    private function determineMessageType($channel, $metadata)
+    {
+        // Lógica para determinar o tipo baseado no canal ou metadata
+        if (isset($metadata['type'])) {
+            return $metadata['type'];
+        }
+
+        // Canal específico pode determinar o tipo
+        if ($channel === 'in_person') {
+            return 'message';
+        }
+
+        return 'message'; // default
+    }
+
+    private function getStaticMessages()
+    {
+        // Aqui você pode adicionar notes e status changes
+        // Estes podem vir de uma tabela separada ou ser mantidos como estático
+        return [
+            [
+                'id' => 2,
+                'date' => '23 de julho de 2024',
+                'author' => 'Zenildo Nhabomba',
+                'time_ago' => 'há 1 ano',
+                'content' => 'Anotado.',
+                'type' => 'note'
+            ],
+            [
+                'id' => 5,
+                'date' => '24 de junho de 2024',
+                'author' => 'Zenildo Nhabomba',
+                'time_ago' => 'há 1 ano',
+                'content' => 'Etapa Alterada • Pending → Resolved (Etapa)',
+                'type' => 'status_change'
+            ],
+        ];
+    }
+
+    public function sendMessage()
+    {
+        $this->validate([
+            'newMessage' => 'required|string|min:1',
+            'channel' => 'required|in:sms,whatsapp,email,phone,in_person',
+        ]);
+
+        try {
+
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'token' => $this->currentInstance->token,
+            ])->post('https://free.uazapi.com/send/text', [
+                'number' => $this->lead->client->phone,
+                'text' => $this->newMessage
+            ]);
+            Log::info('Erro ao conectar: ',['Vamos ver Sucesso ENVIO']);
+            if ($response->successful()) {
+                $data = $response->json();
+                Log::info('Erro ao conectar: ',['DATA' =>  $data]);
+                // Criar nova mensagem no banco de dados
+                 Messages::create([
+                    'message_id' => $data['messageid'] ?? '',
+                    'message_to' => $this->lead->client->phone,
+                    'lead_id' => $this->lead->id,
+                    'sender_id' => Auth::id(),
+                    'channel' => $this->channel,
+                    'direction' => $this->direction,
+                    'content' => $this->newMessage,
+                ]);
+
+                Log::info('Erro ao conectar: ',['Sucesso ENVIO' =>  $response->body()]);
+
+            } else {
+                Log::info('Erro ao conectar: ',['ERRO ENVIO' =>  $response->body()]);
+            }
+        } catch (\Exception $e) {
+            Log::info('Erro ao conectar: ',['ERRO ENVIO'=>$e->getMessage()]);
+        }
+
+        // Resetar campo
+        $this->newMessage = '';
+
+        // Recarregar mensagens
+        $this->loadMessages();
+
+    }
+
+    public function markAsRead($messageId)
+    {
+        $message = Messages::find($messageId);
+        if ($message && !$message->read_at) {
+            $message->update(['read_at' => now()]);
+            $this->loadMessages();
+        }
+    }
     public function render()
     {
         return view('livewire.ticket-system');

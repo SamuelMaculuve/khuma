@@ -7,10 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Messages extends Model
 {
-    protected $casts = [
-        'metadata' => 'array',
-        'read_at' => 'datetime',
-    ];
+    protected $guarded = [];
 
     public function lead(): BelongsTo
     {
@@ -20,5 +17,14 @@ class Messages extends Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Messages::class, 'sender_id');
+    }
+    public function instance()
+    {
+        return $this->belongsTo(Instance::class, 'sender_id');
     }
 }

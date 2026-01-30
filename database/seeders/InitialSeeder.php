@@ -41,3 +41,5 @@ class InitialSeeder extends Seeder
         $this->command->info('✅ Admin (admin@kuma.test / password) criado');
     }
 }
+
+

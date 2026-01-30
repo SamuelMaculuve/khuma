@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppConnection extends Component
 {
-    public $phone = '258848293580';
+    public $phone = '258878700088';
     public $currentInstance = '';
     public $baseUrl = 'https://free.uazapi.com';
 

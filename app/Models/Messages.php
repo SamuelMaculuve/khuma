@@ -27,4 +27,9 @@ class Messages extends Model
     {
         return $this->belongsTo(Instance::class, 'sender_id');
     }
+
+    public function client()
+    {
+        return $this->belongsTo(Clients::class);
+    }
 }

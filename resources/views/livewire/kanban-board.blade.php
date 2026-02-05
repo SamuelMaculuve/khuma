@@ -151,6 +151,8 @@
         </div>
     </div>
 
+    <div wire:poll.2s="loadMessages"></div>
+
     <!-- JavaScript para Drag & Drop -->
     <script>
         let draggedItem = null;

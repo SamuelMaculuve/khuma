@@ -9,7 +9,9 @@ use App\Models\Messages;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
+use App\Models\Companies;
+use App\Models\Clients;
+use Illuminate\Support\Str;
 class MessagesController extends Controller
 {
     /**
@@ -44,18 +46,7 @@ class MessagesController extends Controller
         // 2. Normalizar número (remover @s.whatsapp.net)
         $phone = str_replace('@s.whatsapp.net', '', $data['from']);
 
-        // 3. Encontrar lead pelo telefone do cliente
-//        $lead = Leads::whereHas('client', function ($q) use ($phone) {
-//            $q->where('phone', 'like', "%{$phone}%");
-//        })->first();
-
-//        $instance = Instance::where('token', $data['instance_token'])->get();
-
-        Log::info("instance instance_token",['instance instance_token'=> $data]);
-
         $instance = Instance::where('token', $data['instance_token'])->first();
-
-        Log::info("instance Mensagem recebida",['instance Recevida'=> $instance]);
 
         if (! $instance) {
             return null; // instance inválida
@@ -70,60 +61,117 @@ class MessagesController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
 
-        Log::info("Mensagem lastMessage",['Recevida lastMessage'=> $lastMessage]);
+        if ($lastMessage){
+            // Criar nova mensagem no banco de dados
+           Messages::create([
+                'message_id' => $data['messageId'] ?? '',
+                'message_to' => $phone,
+                'lead_id' => $lastMessage->lead_id,
+                'client_id' => $lastMessage->lead->client->id,
+                'sender_id' => $lastMessage->sender_id,
+                'channel' => 'whatsapp',
+                'direction' => 'inbound',
+                'content' => $data['message'] ?? '',
+            ]);
+        }
 
-        // Criar nova mensagem no banco de dados
-        $createdMessages = Messages::create([
-            'message_id' => $data['messageId'] ?? '',
+        $this->saveMessageWithAutoClientLead($data,$phone,$data['instance_token']);
+
+    }
+
+    public function saveMessageWithAutoClientLead(array $data, string $phone, string $token)
+    {
+        // 1. Normalizar telefone
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+
+        // 2. Encontrar instance pelo token
+        $instance = Instance::where('token', $token)->firstOrFail();
+
+        // 3. Encontrar company associada à instance
+        $company = Companies::findOrFail($instance->user->company_id);
+
+        // 4. Verificar se client já existe
+        $client = Clients::where('phone', 'like', "%{$phone}%")->where('company_id', $instance->user->company_id)->first();
+
+
+        if (!$client) {
+            $client = Clients::create([
+                'company_id' => $instance->user->company_id,
+                'name' => 'Cliente WhatsApp ' . substr($phone, -4),
+                'phone' => $phone,
+                'email' => null,
+                'address' => null,
+                'additional_info' => json_encode(`{'info': 'Criado automaticamente via WhatsApp'}`),
+            ]);
+            Log::info("Mensagem lastMessage Lead",['msg' =>'Criado automaticamente via WhatsApp']);
+        }
+
+        // 5. Criar lead (ou reutilizar aberto)
+        $lead = Leads::where('client_id', $client->id)
+            ->whereIn('status', ['new', 'contacted', 'qualified', 'proposal', 'negotiation'])
+            ->first();
+
+        Log::info("saveMessageWithAutoClientLead::::::",['msg' =>'===========saveMessage[][][][][][]WithAutoClientLead============='.$lead]);
+
+        if (!$lead) {
+            $lead = Leads::create([
+                'client_id' => $client->id,
+                'reference' => 'LEAD-' . strtoupper(Str::random(8)),
+                'title' => 'Contacto via WhatsApp',
+                'description' => 'Lead criada automaticamente a partir de mensagem WhatsApp',
+                'status' => 'new',
+                'value' => 0,
+                'source' => 'whatsapp',
+            ]);
+            Log::info("Mensagem lastMessage Lead",['msg' =>'Lead criada automaticamente a partir de mensagem WhatsApp']);
+        }
+
+        // 6. Criar mensagem
+        $createdMessage = Messages::create([
+            'message_id' => $data['messageId'] ?? Str::uuid(),
             'message_to' => $phone,
-            'lead_id' => $lastMessage->lead_id,
-            'sender_id' => $lastMessage->sender_id,
+            'lead_id' => $lead->id,
+            'client_id' => $client->id,
+            'sender_id' => $instance->user->id, // relação com Instance
             'channel' => 'whatsapp',
             'direction' => 'inbound',
             'content' => $data['message'] ?? '',
         ]);
+//        Log::info("Mensagem lastMessage Lead",['msg' =>'keep trying'.$createdMessage]);
+        Log::info("Mensagem lastMessage Lead",['msg' =>'keep trying------'.$data['messageId']]);
 
-        Log::info("Mensagem createdMessages",['Recevida createdMessages'=> $createdMessages]);
-        //php artisan make:migration message_to --table=messages
-        // 1. gravar from
-        // pegar o token
-        // pegar ultima mensagem do numero X com token Y
-
-//        tenho token e $phone, retonar a ultima mensagem tenho em conta essas 2 variaveis
+        return $createdMessage;
+    }
 //
-//        Instance(user_id,name,systemName)
-//        Messages(message_id,lead_id,sender_id (tem relacao com com Instance))
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Messages $messages)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Messages $messages)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Messages $messages)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Messages $messages)
-    {
-        //
-    }
+//    /**
+//     * Display the specified resource.
+//     */
+//    public function show(Messages $messages)
+//    {
+//        //
+//    }
+//
+//    /**
+//     * Show the form for editing the specified resource.
+//     */
+//    public function edit(Messages $messages)
+//    {
+//        //
+//    }
+//
+//    /**
+//     * Update the specified resource in storage.
+//     */
+//    public function update(Request $request, Messages $messages)
+//    {
+//        //
+//    }
+//
+//    /**
+//     * Remove the specified resource from storage.
+//     */
+//    public function destroy(Messages $messages)
+//    {
+//        //
+//    }
 }

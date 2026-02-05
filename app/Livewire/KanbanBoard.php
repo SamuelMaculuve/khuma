@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Leads;
+use App\Models\Messages;
 use Carbon\Carbon;
 use Livewire\Component;
 
@@ -192,6 +193,35 @@ class KanbanBoard extends Component
                     : null,
             ];
         }
+    }
+
+    public function loadMessages()
+    {
+//        // Carregar mensagens do banco de dados
+//        $dbMessages = Messages::where('sender_id', auth()->user()->id)
+//            ->orderBy('created_at', 'desc')
+//            ->get()
+//            ->map(function ($message) {
+//                return [
+//                    'id' => $message->id,
+//                    'date' => $message->created_at->format('d \d\e F \d\e Y'),
+//                    'author' => $message->client == null ? $message->sender->name : $message->client->name ?? "N/A",
+//                    'time_ago' => $message->created_at->diffForHumans(),
+//                    'content' => $message->content,
+//                    'type' => $this->determineMessageType($message->channel, $message->metadata),
+//                    'channel' => $message->channel,
+//                    'direction' => $message->direction
+//                ];
+//            })
+//            ->toArray();
+//
+//        // Combinar com mensagens estáticas (notes e status changes)
+//        $this->messages = array_merge($dbMessages, $this->getStaticMessages());
+//
+//        // Ordenar por data
+//        usort($this->messages, function ($a, $b) {
+//            return strtotime($b['date']) - strtotime($a['date']);
+//        });
     }
     public function render()
     {

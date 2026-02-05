@@ -118,16 +118,16 @@ class TicketSystem extends Component
     //TODO: FILTRAR POR LEAD, MAKE WORK COMO DEVE SER...
     public function loadMessages()
     {
-        Log::info("\n \n ============= Polly this ni\igga");
         // Carregar mensagens do banco de dados
-        $dbMessages = Messages::where('sender_id', auth()->user()->id)
+        $dbMessages = Messages::where('lead_id',$this->lead->id)->
+            where('sender_id', auth()->user()->id)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($message) {
                 return [
                     'id' => $message->id,
                     'date' => $message->created_at->format('d \d\e F \d\e Y'),
-                    'author' => $message->sender->name ?? $message->sender->email,
+                    'author' => $message->client == null ? $message->sender->name : $message->client->name ?? "N/A",
                     'time_ago' => $message->created_at->diffForHumans(),
                     'content' => $message->content,
                     'type' => $this->determineMessageType($message->channel, $message->metadata),

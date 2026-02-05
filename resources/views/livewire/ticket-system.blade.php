@@ -215,6 +215,7 @@
 
             </div>
         </div>
+
         <div wire:poll.2s="loadMessages"></div>
 
     </div>

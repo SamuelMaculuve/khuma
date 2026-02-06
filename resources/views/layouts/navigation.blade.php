@@ -16,9 +16,16 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('leads.all')" :active="request()->routeIs('leads.*')">
+                        Leads
+                    </x-nav-link>
+                </div>
+
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('instance.create')" :active="request()->routeIs('instance.*')">
-                        Instance
+                        Instancias
                     </x-nav-link>
                 </div>
 
@@ -28,10 +35,11 @@
                     {{ __('Utilizadores') }}
                 </x-nav-link>
                 @endrole
-
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                 <x-nav-link :href="route('call_logs.index')" :active="request()->routeIs('call_logs.*')">
                     Chamadas
                 </x-nav-link>
+                </div>
 
             </div>
 

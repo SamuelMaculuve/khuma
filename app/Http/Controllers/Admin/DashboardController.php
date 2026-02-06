@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CallLog;
+use App\Models\Leads;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -53,6 +54,8 @@ class DashboardController extends Controller
             $totalDuration = $query->sum('duration_seconds');
             $missedCalls = $query->where('type', 'MISSED')->count();
             $avgDuration = $query->avg('duration_seconds');
+
+            $leads = Leads::where('user_id', $user->id);
 
             return view('dashboard', [
                 'role' => 'subscriber',

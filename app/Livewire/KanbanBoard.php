@@ -26,7 +26,7 @@ class KanbanBoard extends Component
     public $filterPriority = 'todos';
 
     // Propriedades para ordenação
-    public $sortField = 'number';
+    public $sortField = 'id';
     public $sortDirection = 'desc';
 
     public function addState()

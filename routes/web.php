@@ -13,9 +13,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/whatsapp', function () {
+Route::get('/leads', function () {
     return view('admin.whatsapp.index');
-});
+})->name("leads.all");
 
 //Route::get('/whatsapp-show', function () {
 //    return view('admin.whatsapp.show');

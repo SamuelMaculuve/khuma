@@ -16,6 +16,8 @@ class TicketSystem extends Component
 
     public $currentInstance;
 
+    public $hasChatAccess = true; // Simulação de acesso, deve ser baseado no plano do usuário
+
     public $ticket = [];
 
     public $statuses = [
@@ -36,6 +38,9 @@ class TicketSystem extends Component
 
     public function sendMessage1()
     {
+        if(!$this->hasChatAccess){
+            return session()->flash('error', 'Acesso negado. Atualize seu plano para acessar esta funcionalidade.');
+        }
         if (!empty($this->newMessage)) {
             $this->messages[] = [
                 'id' => count($this->messages) + 1,

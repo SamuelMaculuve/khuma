@@ -176,7 +176,9 @@
 
                                         </div>
                                 <!-- Lista de mensagens -->
-                                <div class="h-2/3 overflow-auto">
+                                <div class="relative h-2/3 overflow-auto">
+                                     <div class="@if(!$hasChatAccess) blur-sm pointer-events-none select-none @endif overflow-auto h-full">
+
                                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Historico de Messagens</h3>
                                     @foreach($messages as $message)
                                         <div class="border-l-4
@@ -204,6 +206,26 @@
                                             </div>
                                         </div>
                                     @endforeach
+                                     </div>
+                                     {{-- Overlay de bloqueio --}}
+                                @if(!$hasChatAccess)
+                                    <div class="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+                                        <div class="bg-white p-6 rounded-xl shadow-lg text-center max-w-sm">
+                                            <h4 class="text-lg font-bold mb-2">
+                                                🔒 Chat Premium
+                                            </h4>
+
+                                            <p class="text-sm text-gray-600 mb-4">
+                                                Faça upgrade do seu plano para visualizar e interagir com as mensagens.
+                                            </p>
+
+                                            <a href="#"
+                                            class="inline-block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                                                Fazer Upgrade
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
                                 </div>
                             </div>
 

@@ -35,6 +35,12 @@
                     </x-nav-link>
                 </div>
 
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('subscription.plans')" :active="request()->routeIs('subscription.*')">
+                        Subscrição
+                    </x-nav-link>
+                </div>
+
                 <!-- Links só para ADMIN -->
                 @role('admin')
                 <x-nav-link :href="route('users.index')" :active="request()->routeIs('admin.users.*')">

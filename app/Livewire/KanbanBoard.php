@@ -165,7 +165,7 @@ class KanbanBoard extends Component
 
     public function mount()
     {
-        $leads = Leads::query()->get();
+        $leads = Leads::query()->where('company_id', auth()->user()->company_id)->get();
 
         foreach ($leads as $lead) {
 

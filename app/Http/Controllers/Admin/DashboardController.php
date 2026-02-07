@@ -39,7 +39,7 @@ class DashboardController extends Controller
             ]);
         }
 
-        if ($user->hasRole('subscriber')) {
+        if ($user->hasRole('subscriber') || $user->hasRole('salesperson')) {
             $subscription = $user->subscription; // relação User->Subscription
             $plan = $subscription?->plan ?? 'kuma_essencial';
 
@@ -55,7 +55,12 @@ class DashboardController extends Controller
             $missedCalls = $query->where('type', 'MISSED')->count();
             $avgDuration = $query->avg('duration_seconds');
 
-            $leads = Leads::where('user_id', $user->id);
+            $leads = Leads::where('company_id', $user->company_id);
+
+            $total_leads = $leads->count();
+            $total_new_leads = $leads->where('status','new')->count();
+            $total_lost_leads = $leads->where('status','lost')->count();
+            $total_won_leads = $leads->where('status','won')->count();
 
             return view('dashboard', [
                 'role' => 'subscriber',
@@ -65,6 +70,10 @@ class DashboardController extends Controller
                 'missedCalls' => $missedCalls,
                 'avgDuration' => $avgDuration,
                 'recentCalls' => $recentCalls,
+                'total_leads' => $total_leads,
+                'total_new_leads' => $total_new_leads,
+                'total_lost_leads' => $total_lost_leads,
+                'total_won_leads' => $total_won_leads,
             ]);
         }
     }

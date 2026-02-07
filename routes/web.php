@@ -17,9 +17,9 @@ Route::get('/leads', function () {
     return view('admin.whatsapp.index');
 })->name("leads.all");
 
-//Route::get('/whatsapp-show', function () {
-//    return view('admin.whatsapp.show');
-//});
+Route::get('/manage', function () {
+    return view('admin.manage.index');
+})->name('manage');
 
 Route::get('dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 

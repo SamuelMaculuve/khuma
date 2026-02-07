@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('value', 10, 2)->nullable();
             $table->date('expected_close_date')->nullable();
             $table->string('source')->nullable();
+            $table->foreignId('company_id')->constrained()->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
             $table->index('client_id');

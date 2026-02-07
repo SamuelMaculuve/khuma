@@ -20,7 +20,7 @@ class CompanyClientUserSeeder extends Seeder
             // =====================
             $company = Companies::create([
                 'name' => "Company {$i}",
-                'tax_number' => 'TAX-' . rand(100000, 999999),
+                'tax_number' => rand(100000000, 999999999),
                 'address' => "Endereço da Company {$i}",
                 'phone' => '25884' . rand(1000000, 9999999),
                 'email' => "company{$i}@example.com",
@@ -68,6 +68,7 @@ class CompanyClientUserSeeder extends Seeder
                         'value' => rand(5000, 100000),
                         'expected_close_date' => now()->addDays(rand(5, 90)),
                         'source' => collect(['website', 'whatsapp', 'email', 'referral'])->random(),
+                        'company_id'=> $client->company_id
                     ]);
                 }
             }

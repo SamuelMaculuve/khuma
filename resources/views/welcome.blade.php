@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>khuma - A tua app de chamadas inteligente</title>
+    <title>Khuma - CRM Inteligente com Chatbot para WhatsApp</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -59,8 +59,7 @@
 <header class="sticky top-0 z-50 bg-white shadow-md">
     <div class="container mx-auto px-4 py-4 flex justify-between items-center">
         <div class="flex items-center space-x-2">
-
-            <span class="text-xl font-bold text-primary">🐾 khuma</span>
+            <span class="text-xl font-bold text-primary">🐾 Khuma CRM</span>
         </div>
 
         <nav class="hidden md:flex space-x-8">
@@ -71,7 +70,7 @@
         </nav>
 
         <div class="flex items-center space-x-4">
-            <a href="{{ route("login") }}" class="text-primary font-medium hover:text-secondary transition">Entrar</a>
+            <a href="#" class="text-primary font-medium hover:text-secondary transition">Entrar</a>
         </div>
 
         <button class="md:hidden text-gray-600">
@@ -84,63 +83,51 @@
 <section class="hero-gradient text-white py-16 md:py-24">
     <div class="container mx-auto px-4 flex flex-col md:flex-row items-center">
         <div class="md:w-1/2 mb-10 md:mb-0">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4">🐾 khuma - A tua app de chamadas inteligente</h1>
-            <p class="text-lg md:text-xl mb-6 opacity-90">Registo automático de chamadas com dashboard online para acompanhar e organizar as tuas comunicações.</p>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Automatize seu Atendimento no WhatsApp</h1>
+            <p class="text-lg md:text-xl mb-6 opacity-90">CRM completo com chatbot integrado para captar leads, qualificar clientes e automatizar respostas no WhatsApp.</p>
             <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <a href="https://wa.me/258878700088?text=Olá%20👋%2C%20tenho%20interesse%20em%20saber%20mais%20sobre%20o%20Khuma!" target="_blank" class="bg-white text-primary px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-100 transition">Começar Agora</a>
-                <a href="https://wa.me/258878700088?text=Olá%20👋%2C%20tenho%20interesse%20em%20saber%20mais%20sobre%20o%20Khuma!" target="_blank" class="border-2 border-white text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-white hover:bg-opacity-10 transition">Saber Mais</a>
+                <a href="#" target="_blank" class="bg-white text-primary px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-100 transition">Começar Agora</a>
+                <a href="#pricing" class="border-2 border-white text-white px-6 py-3 rounded-lg font-medium text-center hover:bg-white hover:bg-opacity-10 transition">Ver Planos</a>
             </div>
         </div>
         <div class="md:w-1/2 flex justify-center">
             <div class="relative">
                 <div class="bg-white rounded-2xl shadow-2xl p-2 w-64 h-96 mx-auto">
-                    <div class="bg-gray-800 rounded-t-xl h-8 flex items-center justify-center">
-                        <div class="flex space-x-1">
-                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    <div class="bg-[#075E54] rounded-t-xl h-10 flex items-center px-4">
+                        <div class="flex items-center space-x-2 text-white">
+                            <i class="fab fa-whatsapp text-xl"></i>
+                            <span class="font-medium">Chatbot Khuma</span>
                         </div>
                     </div>
-                    <div class="p-4 h-full bg-gradient-to-b from-blue-50 to-white rounded-b-xl">
-                        <div class="text-center mb-4">
-                            <h3 class="font-bold text-gray-800">Dashboard khuma</h3>
-                            <p class="text-xs text-gray-600">Últimas chamadas</p>
+                    <div class="p-4 h-full bg-gradient-to-b from-green-50 to-white rounded-b-xl">
+                        <div class="mb-4">
+                            <div class="bg-green-500 rounded-lg p-3 mb-2 text-sm">
+                                Olá! Sou o assistente virtual da Khuma. Como posso ajudar?
+                            </div>
+                            <div class="bg-green-500 rounded-lg p-3 mb-2 text-sm">
+                                Escolha uma opção:<br>
+                                1️⃣ Informações<br>
+                                2️⃣ Agendamento<br>
+                                3️⃣ Falar com atendente
+                            </div>
                         </div>
-                        <div class="space-y-3">
-                            <div class="flex items-center p-2 bg-white rounded-lg shadow-sm">
+                        <div class="space-y-2">
+                            <div class="flex items-center p-2 bg-gray-300 rounded-lg">
                                 <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                                    <i class="fas fa-phone text-green-600 text-xs"></i>
+                                    <i class="fas fa-user text-green-600 text-xs"></i>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium">Maria Silva</p>
-                                    <p class="text-xs text-gray-500">5 min atrás • 12:45</p>
-                                </div>
-                                <div class="ml-auto text-green-600 text-sm font-medium">
-                                    5:32
+                                    <p class="text-sm font-medium">Lead Capturado</p>
+                                    <p class="text-xs text-gray-500">João Silva • 5 min atrás</p>
                                 </div>
                             </div>
-                            <div class="flex items-center p-2 bg-white rounded-lg shadow-sm">
-                                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
-                                    <i class="fas fa-phone-slash text-red-600 text-xs"></i>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium">Número Desconhecido</p>
-                                    <p class="text-xs text-gray-500">15 min atrás • 12:35</p>
-                                </div>
-                                <div class="ml-auto text-red-600 text-sm font-medium">
-                                    Perdida
-                                </div>
-                            </div>
-                            <div class="flex items-center p-2 bg-white rounded-lg shadow-sm">
+                            <div class="flex items-center p-2 bg-blue-300 rounded-lg">
                                 <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                                    <i class="fas fa-phone-alt text-blue-600 text-xs"></i>
+                                    <i class="fas fa-calendar text-blue-600 text-xs"></i>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium">João Santos</p>
-                                    <p class="text-xs text-gray-500">1 hora atrás • 11:50</p>
-                                </div>
-                                <div class="ml-auto text-blue-600 text-sm font-medium">
-                                    2:15
+                                    <p class="text-sm font-medium">Agendamento</p>
+                                    <p class="text-xs text-gray-500">Marcado para amanhã</p>
                                 </div>
                             </div>
                         </div>
@@ -155,57 +142,57 @@
 <section id="features" class="py-16 bg-white">
     <div class="container mx-auto px-4">
         <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold mb-4">🚀 Funcionalidades principais</h2>
-            <p class="text-gray-600 max-w-2xl mx-auto">O khuma recolhe automaticamente as informações das chamadas e envia tudo para um dashboard online onde podes acompanhar e organizar os teus registos.</p>
+            <h2 class="text-3xl font-bold mb-4">🚀 Funcionalidades Principais</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto">Tudo que você precisa para automatizar seu atendimento e gerenciar clientes no WhatsApp</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div class="feature-card bg-light p-6 rounded-xl shadow-md">
                 <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
-                    <i class="fas fa-mobile-alt text-primary text-xl"></i>
+                    <i class="fab fa-whatsapp text-primary text-xl"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Registo Automático</h3>
-                <p class="text-gray-600">Regista automaticamente todas as chamadas (entrada, saída, perdidas) no teu telemóvel.</p>
+                <h3 class="text-xl font-bold mb-2">Chatbot WhatsApp</h3>
+                <p class="text-gray-600">Atendimento automático 24/24 no WhatsApp com respostas inteligentes e fluxos conversacionais.</p>
+            </div>
+
+            <div class="feature-card bg-green p-6 rounded-xl shadow-md">
+                <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-users text-primary text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Captação de Leads</h3>
+                <p class="text-gray-600">Capture e classifique automaticamente leads direto do WhatsApp no khuma CRM.</p>
             </div>
 
             <div class="feature-card bg-light p-6 rounded-xl shadow-md">
                 <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
-                    <i class="fas fa-id-card text-primary text-xl"></i>
+                    <i class="fas fa-chart-line text-primary text-xl"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Identificação Completa</h3>
-                <p class="text-gray-600">Identifica número e nome (quando disponível) de cada chamada recebida ou efetuada.</p>
+                <h3 class="text-xl font-bold mb-2">Qualificação de Clientes</h3>
+                <p class="text-gray-600">Sistema inteligente para qualificar e segmentar clientes automaticamente.</p>
             </div>
 
             <div class="feature-card bg-light p-6 rounded-xl shadow-md">
                 <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
-                    <i class="fas fa-clock text-primary text-xl"></i>
+                    <i class="fas fa-calendar-check text-primary text-xl"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Duração e Horário</h3>
-                <p class="text-gray-600">Regista a duração, data e hora exata de cada chamada para referência futura.</p>
+                <h3 class="text-xl font-bold mb-2">Agendamentos Automáticos</h3>
+                <p class="text-gray-600">Clientes podem agendar serviços diretamente pelo chatbot do WhatsApp.</p>
+            </div>
+
+            <div class="feature-card bg-light p-6 rounded-xl shadow-md">
+                <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-database text-primary text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Integração CRM</h3>
+                <p class="text-gray-600">Conecte com Google Sheets, CRM simples ou outras ferramentas de gestão.</p>
             </div>
 
             <div class="feature-card bg-light p-6 rounded-xl shadow-md">
                 <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
                     <i class="fas fa-chart-bar text-primary text-xl"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Dashboard Intuitivo</h3>
-                <p class="text-gray-600">Acede ao teu histórico de chamadas através de um dashboard intuitivo em qualquer dispositivo.</p>
-            </div>
-
-            <div class="feature-card bg-light p-6 rounded-xl shadow-md">
-                <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
-                    <i class="fas fa-history text-primary text-xl"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2">Histórico Organizado</h3>
-                <p class="text-gray-600">Mantém um histórico organizado de todas as tuas comunicações para consulta rápida.</p>
-            </div>
-
-            <div class="feature-card bg-light p-6 rounded-xl shadow-md">
-                <div class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
-                    <i class="fas fa-file-export text-primary text-xl"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2">Exportação de Dados</h3>
-                <p class="text-gray-600">Exporta os teus dados de chamadas em formatos úteis como CSV, PDF ou Excel.</p>
+                <h3 class="text-xl font-bold mb-2">Relatórios Customizáveis</h3>
+                <p class="text-gray-600">Dashboard com relatórios detalhados de performance e conversões.</p>
             </div>
         </div>
     </div>
@@ -215,81 +202,136 @@
 <section id="pricing" class="py-16 bg-gray-50">
     <div class="container mx-auto px-4">
         <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold mb-4">📦 Pacotes Disponíveis</h2>
-            <p class="text-gray-600 max-w-2xl mx-auto">Escolhe o plano que melhor se adapta às tuas necessidades. Com o khuma, tens sempre o controlo das tuas chamadas.</p>
+            <h2 class="text-3xl font-bold mb-4">📦 Nossos Melhores Pacotes</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto">Escolha o plano ideal para o seu negócio. Todos incluem integração completa com WhatsApp.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <!-- khuma Essencial -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <!-- UBTNTU -->
             <div class="pricing-card bg-white p-8 rounded-xl shadow-md flex flex-col">
                 <div class="mb-6">
                     <div class="flex items-center mb-2">
-                        <span class="text-2xl font-bold">🐾</span>
-                        <h3 class="text-xl font-bold ml-2">khuma Essencial</h3>
+                        <h3 class="text-xl font-bold text-gray-800">UBUNTU</h3>
                     </div>
-                    <p class="text-gray-600 mb-4">Para quem precisa apenas de registar e acompanhar chamadas.</p>
-                    <div class="text-3xl font-bold text-primary mb-2">5.000 MT<span class="text-sm font-normal text-gray-500">/mês</span></div>
+                    <p class="text-gray-600 mb-4">Ideal para pequenos negócios e profissionais individuais</p>
+                    <div class="text-3xl font-bold text-primary mb-2">3.000 MZN<span class="text-sm font-normal text-gray-500">/mês</span></div>
                 </div>
 
                 <ul class="mb-8 space-y-3 flex-grow">
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Até 200 chamadas</span>
+                        <span>Chatbot básico WhatsApp ou site</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Dashboard simples e intuitivo</span>
+                        <span>Respostas automáticas às perguntas frequentes</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Histórico de 3 meses</span>
+                        <span>Horário automático</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-accent mt-1 mr-2"></i>
+                        <span>1 fluxo de conversa</span>
                     </li>
                 </ul>
 
-                <a href="https://wa.me/258878700088?text=Olá%20👋%2C%20tenho%20interesse%20em%20saber%20mais%20sobre%20o%20Khuma!" target="_blank" class="bg-primary text-white text-center py-3 rounded-lg font-medium hover:bg-secondary transition">Escolher Plano</a>
+                <a href="{{ route('register') }}" target="_blank" class="bg-primary text-white text-center py-3 rounded-lg font-medium hover:bg-secondary transition">INICIAR AGORA</a>
 
             </div>
 
-            <!-- khuma Premium -->
-            <div class="pricing-card popular bg-white p-8 rounded-xl shadow-lg relative">
+            <!-- BAOBÁ -->
+            <div class="pricing-card popular bg-white p-8 rounded-xl shadow-lg flex flex-col">
                 <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span class="bg-primary text-white px-4 py-1 rounded-full text-sm font-medium">MAIS POPULAR</span>
                 </div>
 
                 <div class="mb-6">
                     <div class="flex items-center mb-2">
-                        <span class="text-2xl font-bold">⚡</span>
-                        <h3 class="text-xl font-bold ml-2">khuma Premium</h3>
+                        <h3 class="text-xl font-bold text-gray-800">BAOBÁ</h3>
                     </div>
-                    <p class="text-gray-600 mb-4">Para quem precisa de controlo total e estatísticas avançadas.</p>
-                    <div class="text-3xl font-bold text-primary mb-2">17.000 MT<span class="text-sm font-normal text-gray-500">/mês</span></div>
+                    <p class="text-gray-600 mb-4">Ideal para empresas em crescimento</p>
+                    <div class="text-3xl font-bold text-primary mb-2">8.000 MZN<span class="text-sm font-normal text-gray-500">/mês</span></div>
                 </div>
 
                 <ul class="mb-8 space-y-3">
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Chamadas ilimitadas</span>
+                        <span><strong>Inclui tudo do Ubuntu +</strong></span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Dashboard com filtros avançados</span>
+                        <span>Atendimento 24/7</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Estatísticas simples (totais, médias, chamadas perdidas)</span>
+                        <span>Qualificação de clientes</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Histórico ilimitado</span>
+                        <span>Agendamentos simples</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Relatórios automáticos (PDF/Excel)</span>
+                        <span>Integração com Google Sheets ou CRM simples</span>
+                    </li>
+                </ul>
+                <a href="{{ route('register') }}" target="_blank" class="w-full bg-primary text-white text-center py-3 rounded-lg font-medium hover:bg-secondary transition">INICIAR AGORA</a>
+
+            </div>
+
+            <!-- LEÃO -->
+            <div class="pricing-card bg-white p-8 rounded-xl shadow-md flex flex-col">
+                <div class="mb-6">
+                    <div class="flex items-center mb-2">
+                        <h3 class="text-xl font-bold text-gray-800">LEÃO</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">Ideal para empresas médias e marcas fortes</p>
+                    <div class="text-3xl font-bold text-primary mb-2">Custom<span class="text-sm font-normal text-gray-500">/mês</span></div>
+                </div>
+
+                <ul class="mb-8 space-y-3 flex-grow">
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-accent mt-1 mr-2"></i>
+                        <span><strong>Inclui tudo do Baobá +</strong></span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-accent mt-1 mr-2"></i>
+                        <span>Respostas personalizadas por cliente</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-accent mt-1 mr-2"></i>
+                        <span>Captação e classificação automática de leads</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-accent mt-1 mr-2"></i>
+                        <span>Suporte dedicado</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-check text-accent mt-1 mr-2"></i>
+                        <span>Relatórios customizáveis</span>
                     </li>
                 </ul>
 
-                <a href="https://wa.me/258878700088?text=Olá%20👋%2C%20tenho%20interesse%20em%20saber%20mais%20sobre%20o%20Khuma!" target="_blank" class="bg-primary text-white text-center py-3 rounded-lg font-medium hover:bg-secondary transition" style="padding: 10px">Escolher Plano</a>
+                <a href="#" target="_blank" class="bg-dark text-white text-center py-3 rounded-lg font-medium hover:bg-gray-800 transition">CONTACTAR AGORA</a>
 
+            </div>
+        </div>
+
+        <div class="mt-12 text-center">
+            <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-8">
+                <div class="flex items-center">
+                    <i class="fas fa-check text-accent mr-2"></i>
+                    <span>Cancele quando quiser</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-check text-accent mr-2"></i>
+                    <span>24/7 suporte</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-check text-accent mr-2"></i>
+                    <span>Demonstração gratuita</span>
+                </div>
             </div>
         </div>
     </div>
@@ -300,26 +342,26 @@
     <div class="container mx-auto px-4">
         <div class="flex flex-col md:flex-row items-center">
             <div class="md:w-1/2 mb-10 md:mb-0">
-                <h2 class="text-3xl font-bold mb-6">Ideal para profissionais e pequenos negócios</h2>
-                <p class="text-gray-600 mb-4">Com o khuma, nunca mais perdes o rasto das tuas comunicações: cada chamada fica guardada com número, nome (se estiver registado), duração, data, hora e tipo de chamada.</p>
-                <p class="text-gray-600 mb-4">Assim, tens sempre uma visão clara e organizada da tua actividade telefónica, seja para uso pessoal ou para o teu negócio.</p>
-                <p class="text-gray-600">O khuma é especialmente útil para:</p>
+                <h2 class="text-3xl font-bold mb-6">Por que escolher o Khuma CRM?</h2>
+                <p class="text-gray-600 mb-4">O WhatsApp é a ferramenta de comunicação mais usada em Moçambique, com milhões de utilizadores ativos diariamente. Nosso CRM integrado ao WhatsApp permite automatizar atendimento, captar leads e gerenciar clientes de forma eficiente.</p>
+                <p class="text-gray-600 mb-4">Com o Khuma, você transforma conversas do WhatsApp em oportunidades de negócio organizadas e rastreáveis.</p>
+                <p class="text-gray-600">Ideal para:</p>
                 <ul class="mt-4 space-y-2">
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Profissionais que precisam de manter registo de chamadas com clientes</span>
+                        <span>Pequenos negócios que querem automatizar atendimento</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Pequenos negócios que querem acompanhar a actividade telefónica</span>
+                        <span>Empresas que precisam captar leads pelo WhatsApp</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Rádios comunitárias que precisam de registar chamadas de ouvintes</span>
+                        <span>Profissionais que desejam qualificar clientes automaticamente</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-check text-accent mt-1 mr-2"></i>
-                        <span>Associações que necessitam de histórico de comunicações</span>
+                        <span>Marcas que buscam integrar WhatsApp com seu CRM</span>
                     </li>
                 </ul>
             </div>
@@ -328,42 +370,48 @@
                     <div class="bg-white p-6 rounded-2xl">
                         <div class="flex items-center mb-4">
                             <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-chart-pie text-white"></i>
+                                <i class="fab fa-whatsapp text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-bold">Estatísticas do Mês</h3>
-                                <p class="text-xs text-gray-500">Resumo das tuas chamadas</p>
+                                <h3 class="font-bold">Dashboard Khuma CRM</h3>
+                                <p class="text-xs text-gray-500">Estatísticas do seu WhatsApp</p>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div class="bg-blue-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500">Total Chamadas</p>
-                                <p class="font-bold text-lg">147</p>
-                            </div>
                             <div class="bg-green-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500">Duração Média</p>
-                                <p class="font-bold text-lg">4:32</p>
+                                <p class="text-xs text-gray-500">Leads Capturados</p>
+                                <p class="font-bold text-lg">48</p>
+                            </div>
+                            <div class="bg-blue-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500">Conversas Ativas</p>
+                                <p class="font-bold text-lg">23</p>
                             </div>
                             <div class="bg-yellow-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500">Chamadas Recebidas</p>
-                                <p class="font-bold text-lg">89</p>
+                                <p class="text-xs text-gray-500">Taxa de Resposta</p>
+                                <p class="font-bold text-lg">98%</p>
                             </div>
-                            <div class="bg-red-50 p-3 rounded-lg">
-                                <p class="text-xs text-gray-500">Chamadas Perdidas</p>
-                                <p class="font-bold text-lg">12</p>
+                            <div class="bg-purple-50 p-3 rounded-lg">
+                                <p class="text-xs text-gray-500">Agendamentos</p>
+                                <p class="font-bold text-lg">15</p>
                             </div>
                         </div>
                         <div class="bg-gray-50 p-3 rounded-lg">
-                            <p class="text-xs text-gray-500 mb-1">Distribuição por Tipo</p>
-                            <div class="flex h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="bg-green-500 w-3/5"></div>
-                                <div class="bg-blue-500 w-1/4"></div>
-                                <div class="bg-red-500 w-1/5"></div>
-                            </div>
-                            <div class="flex justify-between text-xs mt-1">
-                                <span class="text-green-600">Recebidas</span>
-                                <span class="text-blue-600">Efetuadas</span>
-                                <span class="text-red-600">Perdidas</span>
+                            <p class="text-xs text-gray-500 mb-2">Leads por Origem</p>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm">WhatsApp</span>
+                                    <span class="font-medium">65%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: 65%"></div>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm">Site</span>
+                                    <span class="font-medium">25%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: 25%"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -376,9 +424,9 @@
 <!-- CTA Section -->
 <section class="py-16 hero-gradient text-white">
     <div class="container mx-auto px-4 text-center">
-        <h2 class="text-3xl font-bold mb-4">Pronto para começar?</h2>
-        <p class="text-xl mb-8 max-w-2xl mx-auto">Junte-se a milhares de utilizadores que já estão a usar o khuma para organizar as suas chamadas.</p>
-        <a href="https://wa.me/258878700088?text=Olá%20👋%2C%20tenho%20interesse%20em%20saber%20mais%20sobre%20o%20Khuma!" target="_blank" class="bg-white text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-gray-100 transition">Começar Agora</a>
+        <h2 class="text-3xl font-bold mb-4">Vamos fazer o seu negócio crescer juntos!</h2>
+        <p class="text-xl mb-8 max-w-2xl mx-auto">Automatize seu WhatsApp, capture mais leads e aumente suas vendas com o Khuma CRM.</p>
+        <a href="{{ route('register') }}" target="_blank" class="bg-white text-primary px-8 py-3 rounded-lg font-medium text-lg hover:bg-gray-100 transition">Começar Demonstração</a>
     </div>
 </section>
 
@@ -388,15 +436,16 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div class="md:col-span-2">
                 <div class="flex items-center space-x-2 mb-4">
-                    <span class="text-xl font-bold">🐾 khuma</span>
+                    <i class="fab fa-whatsapp text-primary text-2xl"></i>
+                    <span class="text-xl font-bold">Khuma CRM</span>
                 </div>
-                <p class="text-gray-300 mb-4">A aplicação simples e prática que recolhe automaticamente as informações das chamadas feitas e recebidas no teu telemóvel.</p>
+                <p class="text-gray-300 mb-4">CRM inteligente com chatbot integrado para WhatsApp. Automatize atendimento, capture leads e gerencie clientes de forma eficiente.</p>
                 <div class="flex space-x-4">
                     <a href="#" class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center hover:bg-primary transition">
-                        <i class="fab fa-facebook-f"></i>
+                        <i class="fab fa-whatsapp"></i>
                     </a>
                     <a href="#" class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center hover:bg-primary transition">
-                        <i class="fab fa-twitter"></i>
+                        <i class="fab fa-facebook-f"></i>
                     </a>
                     <a href="#" class="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center hover:bg-primary transition">
                         <i class="fab fa-instagram"></i>
@@ -418,8 +467,12 @@
                 <h3 class="text-lg font-bold mb-4">Contacto</h3>
                 <ul class="space-y-2">
                     <li class="flex items-start">
-                        <i class="fas fa-phone mt-1 mr-2 text-primary"></i>
+                        <i class="fab fa-whatsapp mt-1 mr-2 text-primary"></i>
                         <span>+258 87 870 0088</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-envelope mt-1 mr-2 text-primary"></i>
+                        <span>info@khuma.co.mz</span>
                     </li>
                     <li class="flex items-start">
                         <i class="fas fa-map-marker-alt mt-1 mr-2 text-primary"></i>
@@ -430,7 +483,7 @@
         </div>
 
         <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 khuma. Todos os direitos reservados.</p>
+            <p>&copy; 2024 Khuma CRM. Todos os direitos reservados.</p>
         </div>
     </div>
 </footer>

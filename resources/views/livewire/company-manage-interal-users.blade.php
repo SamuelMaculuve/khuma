@@ -54,7 +54,7 @@
                                                                             {{ $role
                                                                                 ? 'bg-green-100 text-green-800'
                                                                                 : 'bg-yellow-100 text-yellow-800' }}">
-                                                                            {{ ucfirst($role) }}
+                                                                            {{ ucfirst(\App\Enums\Role::tryFrom($role)->label()) }}
                                                                         </span>
                                     @endforeach
                                 </td>

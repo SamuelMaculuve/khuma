@@ -103,6 +103,24 @@
             </x-responsive-nav-link>
         </div>
 
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('leads.all')" :active="request()->routeIs('leads.*')">
+                Leads
+            </x-responsive-nav-link>
+        </div>
+
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('instance.create')" :active="request()->routeIs('instance.*')">
+                Instancias
+            </x-responsive-nav-link>
+        </div>
+
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('manage')" :active="request()->routeIs('manage')">
+                Administracao
+            </x-responsive-nav-link>
+        </div>
+
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">

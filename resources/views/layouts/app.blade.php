@@ -160,7 +160,8 @@
 
         <script type="text/javascript" src="http://erp.mazedeve.com/im_livechat/loader/1"></script>
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        {{-- No need to call for app.css or app.js from here cuz vite is already calling --}}
+        {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
         @livewireStyles
     </head>
     <body class="font-sans antialiased">

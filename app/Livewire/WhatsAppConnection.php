@@ -13,7 +13,7 @@ class WhatsAppConnection extends Component
 {
     public $country_code = '+258';
     public $phone = '';
-    public $currentInstance = null;
+    public Instance $currentInstance;
     public $baseUrl = '';
     public $isEvolution = true;
 
@@ -33,6 +33,8 @@ class WhatsAppConnection extends Component
     public function mount()
     {
         $this->currentInstance = Auth::user()->instance;
+        $this->prompt = $this->currentInstance->prompt ?? ''; // ADD THIS
+
         $this->baseUrl = config('app.use_uazapi') ? 'https://free.uazapi.com' : config('app.evolution_api_url');
         $this->isEvolution = config('app.use_evolution');
         $this->checkStatus();
@@ -204,7 +206,7 @@ class WhatsAppConnection extends Component
 
             $this->currentInstance->delete();
             $this->cleanVariables();
-            $this->currentInstance = null;
+            $this->currentInstance = new Instance();
 
             Log::info('ERROR DELETE INSTANCE:', ['response' => $response]);
         } catch (\Exception $e) {
@@ -347,5 +349,11 @@ class WhatsAppConnection extends Component
     public function newqrcode()
     {
         $this->generateQrCode($this->currentInstance->name);
+    }
+
+    public function updatedPrompt($value)
+    {
+        $this->currentInstance->prompt = $value;
+        $this->currentInstance->save();
     }
 }

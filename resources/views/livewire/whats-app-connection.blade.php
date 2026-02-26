@@ -43,16 +43,16 @@
                     <div class="flex items-center space-x-4">
                         <div class="flex items-center">
                             <div
-                                class="w-3 h-3 rounded-full mr-2 {{ $connected == 'connected' ? 'bg-green-500' : 'bg-red-500' }}">
+                                class="w-3 h-3 rounded-full mr-2 {{ $connected == 'connected' || $connected == 'open' ? 'bg-green-500' : 'bg-red-500' }}">
                             </div>
                             <span
-                                class="text-sm font-medium {{ $connected == 'connected' ? 'text-green-700' : 'text-red-700' }}">
-                                {{ $connected == 'connected' ? 'Conectado' : 'Desconectado' }}
+                                class="text-sm font-medium {{ $connected == 'connected' || $connected == 'open' ? 'text-green-700' : 'text-red-700' }}">
+                                {{ $connected == 'connected' || $connected == 'open' ? 'Conectado' : 'Desconectado' }}
                             </span>
                         </div>
 
                         <!-- Indicador de Loading do Polling -->
-                        @if ($connected != 'connected' && $connected != 'close')
+                        @if ($connected != 'connected' && $connected != 'close' && $connected != 'open')
                             <div class="flex items-center text-blue-600">
                                 <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
                                     viewBox="0 0 24 24">
@@ -69,40 +69,40 @@
                 </div>
 
                 <!-- Informações da Instância -->
-                @if ($instanceData)
+                @if ($currentInstance)
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-2">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">ID:</span>
-                                <span class="font-medium">{{ $instanceData['id'] ?? 'N/A' }}</span>
+                                <span class="font-medium">{{ $currentInstance->id ?? 'N/A' }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Nome:</span>
-                                <span class="font-medium">{{ $instanceData['name'] ?? 'N/A' }}</span>
+                                <span class="font-medium">{{ $currentInstance->name ?? 'N/A' }}</span>
                             </div>
-                            <div class="flex justify-between">
+                            {{-- <div class="flex justify-between">
                                 <span class="text-gray-600">Perfil:</span>
                                 <span class="font-medium">{{ $instanceData['profileName'] ?? 'N/A' }}</span>
-                            </div>
+                            </div> --}}
                         </div>
                         <div class="space-y-2">
-                            <div class="flex justify-between">
+                            {{-- <div class="flex justify-between">
                                 <span class="text-gray-600">Plataforma:</span>
                                 <span class="font-medium">{{ $instanceData['plataform'] ?? 'N/A' }}</span>
-                            </div>
+                            </div> --}}
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Status:</span>
                                 <span
                                     class="px-2 py-1 rounded text-xs font-medium
-                            {{ ($instanceData['status'] ?? '') == 'connected' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                    {{ $instanceData['status'] ?? 'N/A' }}
+                            {{ ($currentInstance->status ?? '') == 'connected' || $currentInstance->status == 'open' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                    {{ $currentInstance->status ?? 'N/A' }}
                                 </span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Última atualização:</span>
                                 <span class="font-medium">
-                                    @if (isset($instanceData['updated']))
-                                        {{ \Carbon\Carbon::parse($instanceData['updated'])->format('d/m/Y H:i') }}
+                                    @if (isset($currentInstance->updated_at))
+                                        {{ \Carbon\Carbon::parse($currentInstance->updated_at)->format('d/m/Y H:i') }}
                                     @else
                                         N/A
                                     @endif
@@ -114,7 +114,7 @@
                 <button wire:click="deleteInstance"
                     class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center text-sm
             {{ !$currentInstance ? 'hidden' : '' }} "
-                    {{ $connected ? 'disabled' : '' }}>
+                    {{ $connected != 'connected' && $connected != 'open' ? 'disabled' : '' }}>
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
@@ -167,19 +167,20 @@
                 </div>
             @endif
             <div
-                class="mb-3 flex flex-col sm:flex-row gap-4 justify-center {{ ($connected != 'connected' && $connected != 'connecting' && $connected != 'close') ? '' : 'hidden' }}">
+                class="mb-3 flex flex-col sm:flex-row gap-4 justify-center {{ $connected != 'connected' && $connected != 'connecting' && $connected != 'close' && $connected != 'open' ? '' : 'hidden' }}">
                 <x-phone-input prefixModel="country_code" numberModel="phone" />
                 @error('phone')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            <x-prompt-input myclass="{{ $connected !== 'connected' ? 'hidden' : '' }}" model="prompt" />
+            <x-prompt-input myclass="{{ $connected != 'connected' && $connected != 'open' ? 'hidden' : '' }}"
+                :model="$currentInstance" field="prompt"  />
 
             <!-- Botões de Ação -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                 <!-- Botão Conectar -->
-                @if ($connected != 'connected' && $connected != 'connecting' && $connected != 'close')
+                @if ($connected != 'connected' && $connected != 'connecting' && $connected != 'close' && $connected != 'open')
                     <button wire:click="connect" wire:loading.attr="disabled" wire:target="connect"
                         class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                         @if ($loading)

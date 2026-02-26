@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Instance;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Illuminate\Support\Facades\Http;
@@ -84,8 +85,18 @@ class WhatsAppConnection extends Component
                 if ($response->successful()) {
                     $data = $response->json();
                     Log::info('Instance Created', ['response' => $data]);
-                    $this->generateQrCode($instance_name);
-                    // $this->instanceData = $data['instance'] ?? null;
+                    $instance = new Instance();
+                    $instance->name = $instance_name ?? null;
+                    $instance->status = $data['instance']['status'] ?? null;
+                    $instance->token = $data['instance']['instanceId'] ?? null;
+                    $instance->user_id = Auth::id();
+                    $instance->save();
+
+                    $this->instanceData = $data['instance'] ?? null;
+                    $this->currentInstance = $instance;
+                    $this->manualQrcode = $data['qrcode']['base64'] ?? null; // Guardamos o QR code manual
+                    $this->qrcode = $this->manualQrcode;
+
                     // $this->connected = $data['connected'] ?? false;
                     // $this->loggedIn = $data['loggedIn'] ?? false;
 
@@ -207,6 +218,28 @@ class WhatsAppConnection extends Component
     {
         try {
             if ($this->isEvolution) {
+                $instance_name = $this->currentInstance->name;
+                $url = $this->baseUrl . "/instance/connectionState/$instance_name";
+                $token = config('app.evolution_api_key');
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    "apikey" => $token,
+                ])->get($url, []);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    // Log::info('Instance Status', ['response' => $data]);
+
+                    $this->connected = $data['instance']['state'] ?? 'connecting';
+                    // $this->loggedIn = $data['loggedIn'] ?? false;
+
+
+                } else {
+                    Log::error('Erro ao conectar: ' . $response->body());
+                    $this->error = 'Erro ao conectar: ' . $response->body();
+                }
+
                 return;
             } else {
                 $response = Http::withHeaders([
@@ -304,16 +337,15 @@ class WhatsAppConnection extends Component
         if ($response->successful()) {
             $data = $response->json();
             Log::info('Instance QR code', ['response' => $data]);
-            // $this->instanceData = $data['instance'] ?? null;
-            // $this->connected = $data['connected'] ?? false;
-            // $this->loggedIn = $data['loggedIn'] ?? false;
-
-
+            $this->manualQrcode = $data['base64'] ?? null; // Guardamos o QR code manual
+            $this->qrcode = $this->manualQrcode;
         } else {
             $this->error = 'Erro ao gerar qr code: ' . $response->body();
         }
+    }
 
-        // $this->manualQrcode = $data['instance']['qrcode'] ?? null; // Guardamos o QR code manual
-        // $this->qrcode = $this->manualQrcode;
+    public function newqrcode()
+    {
+        $this->generateQrCode($this->currentInstance->name);
     }
 }

@@ -6,8 +6,10 @@
     </div>
     <div class="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
         <div class="flex items-start">
-            <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <div>
                 <h3 class="font-medium text-start text-blue-800">Como fazer teste:</h3>
@@ -23,17 +25,12 @@
     </div>
     <div class="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg">
 
-        <form
-            action="{{ route('instance.store') }}"
-            method="POST"
-            class="flex gap-3 items-end {{ ($currentInstance || $isEvolution) ? 'hidden' : '' }}"
-        >
+        <form action="{{ route('instance.store') }}" method="POST"
+            class="flex gap-3 items-end {{ $currentInstance || $isEvolution ? 'hidden' : '' }}">
             @csrf
 
-            <button
-                type="submit"
-                class="px-5 py-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition"
-            >
+            <button type="submit"
+                class="px-5 py-3 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition">
                 Criar instância
             </button>
         </form>
@@ -45,18 +42,25 @@
                     <h2 class="text-xl font-semibold text-gray-800">Status da Instância</h2>
                     <div class="flex items-center space-x-4">
                         <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full mr-2 {{ $connected && $loggedIn ? 'bg-green-500' : 'bg-red-500' }}"></div>
-                            <span class="text-sm font-medium {{ $connected && $loggedIn ? 'text-green-700' : 'text-red-700' }}">
-                        {{ $connected && $loggedIn ? 'Conectado' : 'Desconectado' }}
-                    </span>
+                            <div
+                                class="w-3 h-3 rounded-full mr-2 {{ $connected == 'connected' ? 'bg-green-500' : 'bg-red-500' }}">
+                            </div>
+                            <span
+                                class="text-sm font-medium {{ $connected == 'connected' ? 'text-green-700' : 'text-red-700' }}">
+                                {{ $connected == 'connected' ? 'Conectado' : 'Desconectado' }}
+                            </span>
                         </div>
 
                         <!-- Indicador de Loading do Polling -->
-                        @if(!$connected)
+                        @if ($connected != 'connected' && $connected != 'close')
                             <div class="flex items-center text-blue-600">
-                                <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                                        stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
                                 </svg>
                                 <span class="text-sm">Verificando...</span>
                             </div>
@@ -65,7 +69,7 @@
                 </div>
 
                 <!-- Informações da Instância -->
-                @if($instanceData)
+                @if ($instanceData)
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-2">
                             <div class="flex justify-between">
@@ -88,48 +92,49 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Status:</span>
-                                <span class="px-2 py-1 rounded text-xs font-medium
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium
                             {{ ($instanceData['status'] ?? '') == 'connected' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                            {{ $instanceData['status'] ?? 'N/A' }}
-                        </span>
+                                    {{ $instanceData['status'] ?? 'N/A' }}
+                                </span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Última atualização:</span>
                                 <span class="font-medium">
-                            @if(isset($instanceData['updated']))
+                                    @if (isset($instanceData['updated']))
                                         {{ \Carbon\Carbon::parse($instanceData['updated'])->format('d/m/Y H:i') }}
                                     @else
                                         N/A
                                     @endif
-                        </span>
+                                </span>
                             </div>
                         </div>
                     </div>
                 @endif
-                <button
-                    wire:click="deleteInstance"
+                <button wire:click="deleteInstance"
                     class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center text-sm
-            {{ !$currentInstance ? 'hidden' : '' }} " {{ $connected ? 'disabled' : '' }}
-                >
+            {{ !$currentInstance ? 'hidden' : '' }} "
+                    {{ $connected ? 'disabled' : '' }}>
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
                     </svg>
                     Apagar instancia agora
                 </button>
             </div>
 
             <!-- QR Code -->
-            @if($qrcode && !$connected)
+            @if ($connected == 'connecting' || $connected == 'close')
                 <div class="mb-8 bg-white rounded-lg p-6 border border-gray-200">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-gray-800">Escaneie o QR Code</h3>
-                        <button
-                            wire:click="refreshQrCode"
-                            wire:loading.attr="disabled"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center text-sm"
-                        >
+                        <button wire:click="refreshQrCode" wire:loading.attr="disabled"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center text-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                </path>
                             </svg>
                             Atualizar QR
                         </button>
@@ -139,76 +144,106 @@
                             <img src="{{ $qrcode }}" alt="QR Code WhatsApp" class="w-64 h-64">
                         </div>
                         <p class="text-gray-600 text-center mb-4">
-                            Abra o WhatsApp no seu celular, toque em <strong>Menu</strong> → <strong>WhatsApp Web</strong> e escaneie este código
+                            Abra o WhatsApp no seu celular, toque em <strong>Menu</strong> → <strong>WhatsApp
+                                Web</strong> e escaneie este código
                         </p>
                         <div class="flex items-center text-blue-600">
-                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
                             <span>Aguardando conexão...</span>
                         </div>
                         <div class="mt-4 text-center">
-                            <p class="text-sm text-gray-500">O QR code será verificado automaticamente a cada 20 segundos</p>
+                            <p class="text-sm text-gray-500">O QR code será verificado automaticamente a cada 20
+                                segundos</p>
                             <p class="text-sm text-gray-500 mt-1">Se o QR code expirar, clique em "Atualizar QR"</p>
                         </div>
                     </div>
                 </div>
             @endif
-            <div class="mb-3 flex flex-col sm:flex-row gap-4 justify-center {{ $connected ? 'hidden' : '' }}">
-                <x-phone-input
-                    prefixModel="country_code"
-                    numberModel="phone"
-                />
+            <div
+                class="mb-3 flex flex-col sm:flex-row gap-4 justify-center {{ ($connected != 'connected' && $connected != 'connecting' && $connected != 'close') ? '' : 'hidden' }}">
+                <x-phone-input prefixModel="country_code" numberModel="phone" />
                 @error('phone')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
-            <x-prompt-input myclass="{{!$connected ? 'hidden' : ''}}" model="prompt" />
+            <x-prompt-input myclass="{{ $connected !== 'connected' ? 'hidden' : '' }}" model="prompt" />
 
             <!-- Botões de Ação -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                 <!-- Botão Conectar -->
-                @if(!$connected || !$loggedIn)
-                    <button
-                        wire:click="connect"
-                        wire:loading.attr="disabled"
-                        wire:target="connect"
-                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                        @if($loading)
-                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                @if ($connected != 'connected' && $connected != 'connecting' && $connected != 'close')
+                    <button wire:click="connect" wire:loading.attr="disabled" wire:target="connect"
+                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                        @if ($loading)
+                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10"
+                                    stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
                             Conectando...
                         @else
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4"></path>
                             </svg>
                             Conectar WhatsApp
                         @endif
                     </button>
                 @endif
 
+                @if ($connected == 'connecting')
+                    <button wire:click="newqrcode" wire:loading.attr="disabled" wire:target="newqrcode"
+                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                        @if ($loading)
+                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10"
+                                    stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            Carregando...
+                        @else
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4">
+                                </path>
+                            </svg>
+                            Novo Qr Code
+                        @endif
+                    </button>
+                @endif
+
                 <!-- Botão Desconectar -->
-                @if($connected && $loggedIn)
-                    <button
-                        wire:click="disconnect"
-                        wire:loading.attr="disabled"
-                        wire:target="disconnect"
-                        class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                        @if($loading)
-                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                @if ($connected == 'connected')
+                    <button wire:click="disconnect" wire:loading.attr="disabled" wire:target="disconnect"
+                        class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                        @if ($loading)
+                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10"
+                                    stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
                             Desconectando...
                         @else
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                             Desconectar WhatsApp
                         @endif
@@ -216,22 +251,25 @@
                 @endif
 
                 <!-- Botão Verificar Status -->
-                <button
-                    wire:click="checkStatus"
-                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
+                <button wire:click="checkStatus"
+                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
                     </svg>
                     Verificar Status
                 </button>
+
             </div>
             <!-- Mensagem de Erro -->
-            @if($error)
+            @if ($error)
                 <div class="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <div class="flex items-center">
-                        <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <span class="text-red-700">{{ $error }}</span>
                     </div>
@@ -240,206 +278,6 @@
         </div>
 
 
-        <div class="{{ !$currentInstance && $isEvolution ? 'hidden' : '' }}">
-            <!-- Status Atual -->
-            <div class="mb-8 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Status da Instância</h2>
-                    <div class="flex items-center space-x-4">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full mr-2 {{ $connected && $loggedIn ? 'bg-green-500' : 'bg-red-500' }}"></div>
-                            <span class="text-sm font-medium {{ $connected && $loggedIn ? 'text-green-700' : 'text-red-700' }}">
-                        {{ $connected && $loggedIn ? 'Conectado' : 'Desconectado' }}
-                    </span>
-                        </div>
-
-                        <!-- Indicador de Loading do Polling -->
-                        @if(!$connected)
-                            <div class="flex items-center text-blue-600">
-                                <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span class="text-sm">Verificando...</span>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- Informações da Instância -->
-                @if($instanceData)
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">ID:</span>
-                                <span class="font-medium">{{ $instanceData['id'] ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Nome:</span>
-                                <span class="font-medium">{{ $instanceData['name'] ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Perfil:</span>
-                                <span class="font-medium">{{ $instanceData['profileName'] ?? 'N/A' }}</span>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Plataforma:</span>
-                                <span class="font-medium">{{ $instanceData['plataform'] ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Status:</span>
-                                <span class="px-2 py-1 rounded text-xs font-medium
-                            {{ ($instanceData['status'] ?? '') == 'connected' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                            {{ $instanceData['status'] ?? 'N/A' }}
-                        </span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Última atualização:</span>
-                                <span class="font-medium">
-                            @if(isset($instanceData['updated']))
-                                        {{ \Carbon\Carbon::parse($instanceData['updated'])->format('d/m/Y H:i') }}
-                                    @else
-                                        N/A
-                                    @endif
-                        </span>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-                <button
-                    wire:click="deleteInstance"
-                    class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center text-sm
-            {{ !$currentInstance ? 'hidden' : '' }} " {{ $connected ? 'disabled' : '' }}
-                >
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Apagar instancia agora
-                </button>
-            </div>
-
-            <!-- QR Code -->
-            @if($qrcode && !$connected)
-                <div class="mb-8 bg-white rounded-lg p-6 border border-gray-200">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">Escaneie o QR Code</h3>
-                        <button
-                            wire:click="refreshQrCode"
-                            wire:loading.attr="disabled"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center text-sm"
-                        >
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                            Atualizar QR
-                        </button>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <div class="bg-white p-4 rounded-lg border-2 border-dashed border-blue-300 mb-4">
-                            <img src="{{ $qrcode }}" alt="QR Code WhatsApp" class="w-64 h-64">
-                        </div>
-                        <p class="text-gray-600 text-center mb-4">
-                            Abra o WhatsApp no seu celular, toque em <strong>Menu</strong> → <strong>WhatsApp Web</strong> e escaneie este código
-                        </p>
-                        <div class="flex items-center text-blue-600">
-                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Aguardando conexão...</span>
-                        </div>
-                        <div class="mt-4 text-center">
-                            <p class="text-sm text-gray-500">O QR code será verificado automaticamente a cada 20 segundos</p>
-                            <p class="text-sm text-gray-500 mt-1">Se o QR code expirar, clique em "Atualizar QR"</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-            <div class="mb-3 flex flex-col sm:flex-row gap-4 justify-center {{ $connected ? 'hidden' : '' }}">
-                <x-phone-input
-                    prefixModel="country_code"
-                    numberModel="phone"
-                />
-                @error('phone')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <x-prompt-input myclass="{{!$connected ? 'hidden' : ''}}" model="prompt" />
-
-            <!-- Botões de Ação -->
-            <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                <!-- Botão Conectar -->
-                @if(!$connected || !$loggedIn)
-                    <button
-                        wire:click="connect"
-                        wire:loading.attr="disabled"
-                        wire:target="connect"
-                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                        @if($loading)
-                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Conectando...
-                        @else
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Conectar WhatsApp
-                        @endif
-                    </button>
-                @endif
-
-                <!-- Botão Desconectar -->
-                @if($connected && $loggedIn)
-                    <button
-                        wire:click="disconnect"
-                        wire:loading.attr="disabled"
-                        wire:target="disconnect"
-                        class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                    >
-                        @if($loading)
-                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Desconectando...
-                        @else
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                            Desconectar WhatsApp
-                        @endif
-                    </button>
-                @endif
-
-                <!-- Botão Verificar Status -->
-                <button
-                    wire:click="checkStatus"
-                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Verificar Status
-                </button>
-            </div>
-            <!-- Mensagem de Erro -->
-            @if($error)
-                <div class="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span class="text-red-700">{{ $error }}</span>
-                    </div>
-                </div>
-            @endif
-        </div>
 
 
         <!-- Script para controlar o polling -->
@@ -479,8 +317,15 @@
             }
 
             @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(-10px); }
-                to { opacity: 1; transform: translateY(0); }
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
 
             pre {
@@ -498,7 +343,7 @@
     </div>
 
     <!-- Polling condicional apenas quando necessário -->
-    @if(!$connected || !$loggedIn)
+    @if (!$connected || !$loggedIn)
         <div wire:poll.2m="checkStatus"></div>
     @endif
 

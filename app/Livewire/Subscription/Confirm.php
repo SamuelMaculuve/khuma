@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 use Say7ama\MpesaSdk\Http\Transactions\MpesaTransactions;
 
-
 class Confirm extends Component
 {
     public Plan $plan;
@@ -144,8 +143,9 @@ class Confirm extends Component
 
         return strtoupper(substr(str_shuffle(str_repeat($pool, $length)), 0, $length));
     }
+
     public function render()
     {
-        return view('livewire.subscription.confirm');
+        return view('livewire.subscription.confirm')->layout('layouts.app');
     }
 }

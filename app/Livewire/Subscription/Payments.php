@@ -8,7 +8,7 @@ use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Payment;
 
-#[Layout('layouts.app')]
+
 class Payments extends Component
 {
     use WithPagination;
@@ -43,6 +43,6 @@ class Payments extends Component
             ")
             ->first();
 
-        return view('livewire.subscription.payments', compact('payments', 'totals'));
+        return view('livewire.subscription.payments', compact('payments', 'totals'))->layout('layouts.app');
     }
 }

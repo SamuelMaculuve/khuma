@@ -15,6 +15,47 @@
                     <!-- Total Chamadas -->
                     <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
                         <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">Total Leads</span>
+                            <span class="bg-indigo-100 text-indigo-600 text-xs px-2 py-1 rounded-full">📞</span>
+                        </div>
+                        <p class="mt-3 text-3xl font-bold text-gray-800">{{ $total_leads }}</p>
+                    </div>
+
+                    <!-- Duração Total -->
+                    <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">Novos Leads</span>
+                            <span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">⏱️</span>
+                        </div>
+                        <p class="mt-3 text-3xl font-bold text-gray-800">{{ $total_new_leads }}</p>
+                    </div>
+
+                    <!-- Chamadas Perdidas -->
+                    <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">Leads Perdidos</span>
+                            <span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">❌</span>
+                        </div>
+                        <p class="mt-3 text-3xl font-bold text-red-600">{{ $total_lost_leads }}</p>
+                    </div>
+
+                    <!-- Duração Média -->
+                    <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">Leads Ganhos</span>
+                            <span class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">📊</span>
+                        </div>
+                        <p class="mt-3 text-3xl font-bold text-gray-800">
+                            {{ $total_won_leads }}
+                        </p>
+                    </div>
+                </div>
+
+                {{-- <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                    <!-- Total Chamadas -->
+                    <div class="bg-white p-6 rounded-xl shadow hover:shadow-md transition">
+                        <div class="flex items-center justify-between">
                             <span class="text-sm text-gray-500">Total Chamadas</span>
                             <span class="bg-indigo-100 text-indigo-600 text-xs px-2 py-1 rounded-full">📞</span>
                         </div>
@@ -49,10 +90,10 @@
                             {{ number_format($avgDuration, 1) }} seg
                         </p>
                     </div>
-                </div>
+                </div> --}}
             </div>
 
-            <div>
+            {{-- <div>
                 <h3 class="text-lg font-semibold text-gray-700 mb-4">Chamadas Recentes</h3>
 
                 <div class="bg-white rounded-xl shadow overflow-hidden">
@@ -100,7 +141,7 @@
                         Ver mais
                     </a>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
     <!-- Lista de Chamadas Recentes -->

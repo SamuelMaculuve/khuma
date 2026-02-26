@@ -13,6 +13,7 @@ class InitialSeeder extends Seeder
         // Roles
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $subscriberRole = Role::firstOrCreate(['name' => 'subscriber']);
+        $salesRole = Role::firstOrCreate(['name' => 'salesperson']);
 
         // Admin
         $admin = User::firstOrCreate(
@@ -41,3 +42,5 @@ class InitialSeeder extends Seeder
         $this->command->info('✅ Admin (admin@kuma.test / password) criado');
     }
 }
+
+

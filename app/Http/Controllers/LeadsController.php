@@ -34,9 +34,9 @@ class LeadsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Leads $leads)
+    public function show(Leads $lead)
     {
-        //
+        return view('admin.whatsapp.show',compact('lead'));
     }
 
     /**

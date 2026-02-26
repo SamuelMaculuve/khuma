@@ -11,6 +11,9 @@ class Leads extends Model
 {
     use SoftDeletes;
 
+    protected $table = 'leads';
+    protected $guarded = [];
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Clients::class);

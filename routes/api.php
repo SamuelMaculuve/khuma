@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\BroadcastSpotsController;
+use App\Http\Controllers\API\MessagesController;
 use App\Http\Controllers\API\PhoneCallController;
 /*
 |--------------------------------------------------------------------------
@@ -20,4 +20,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('/call-logs/{id}', [PhoneCallController::class, 'store']);
+Route::post('/save-message', [MessagesController::class, 'saveMessage']);
 Route::get('/index-all', [PhoneCallController::class, 'index']);

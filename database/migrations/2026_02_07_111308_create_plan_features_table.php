@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('subscriptions', function (Blueprint $table) {
+        Schema::create('plan_features', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->enum('plan', ['kuma_essencial', 'kuma_premium']);
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->foreignId('plan_id')->constrained()->cascadeOnDelete();
+            $table->string('feature_key');
+            $table->string('feature_value')->nullable();
             $table->timestamps();
+
+            $table->unique(['plan_id', 'feature_key']);
         });
     }
 
@@ -26,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('subscriptions');
+        Schema::dropIfExists('plan_features');
     }
 };

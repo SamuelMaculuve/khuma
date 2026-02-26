@@ -16,9 +16,28 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('leads.all')" :active="request()->routeIs('leads.*')">
+                        Leads
+                    </x-nav-link>
+                </div>
+
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('instance.create')" :active="request()->routeIs('instance.*')">
-                        Instance
+                        Instancias
+                    </x-nav-link>
+                </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('manage')" :active="request()->routeIs('manage')">
+                        Administracao
+                    </x-nav-link>
+                </div>
+
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('subscription.plans')" :active="request()->routeIs('subscription.*')">
+                        Subscrição
                     </x-nav-link>
                 </div>
 
@@ -28,10 +47,11 @@
                     {{ __('Utilizadores') }}
                 </x-nav-link>
                 @endrole
-
-                <x-nav-link :href="route('call_logs.index')" :active="request()->routeIs('call_logs.*')">
-                    Chamadas
-                </x-nav-link>
+{{--                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">--}}
+{{--                <x-nav-link :href="route('call_logs.index')" :active="request()->routeIs('call_logs.*')">--}}
+{{--                    Chamadas--}}
+{{--                </x-nav-link>--}}
+{{--                </div>--}}
 
             </div>
 
@@ -86,6 +106,24 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+        </div>
+
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('leads.all')" :active="request()->routeIs('leads.*')">
+                Leads
+            </x-responsive-nav-link>
+        </div>
+
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('instance.create')" :active="request()->routeIs('instance.*')">
+                Instancias
+            </x-responsive-nav-link>
+        </div>
+
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('manage')" :active="request()->routeIs('manage')">
+                Administracao
             </x-responsive-nav-link>
         </div>
 

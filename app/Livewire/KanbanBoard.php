@@ -2,113 +2,21 @@
 
 namespace App\Livewire;
 
+use App\Models\Leads;
+use App\Models\Messages;
+use Carbon\Carbon;
 use Livewire\Component;
 
 class KanbanBoard extends Component
 {
-    public $states = [
-        'Pendentes' => [
-            [
-                'id' => 4876,
-                'title' => 'Error no portal Estudante > Inscrever > Renovação',
-                'number' => 4876,
-                'requester' => 'Talia Mário Nhanthumbo',
-                'link' => 'https://www.srv.fenix.es',
-                'time' => 'Em 2 dia(s)',
-                'service' => 'SRV_FENIX',
-                'icon' => 'fenix',
-                'priority' => 'alta',
-                'status' => 'Pendentes'
-            ],
-            [
-                'id' => 4873,
-                'title' => 'Link suspeito do Fenix',
-                'number' => 4873,
-                'requester' => '',
-                'link' => '',
-                'time' => 'Em 2 dia(s)',
-                'service' => '',
-                'icon' => '',
-                'priority' => 'média',
-                'status' => 'Pendentes'
-            ],
-            [
-                'id' => 4871,
-                'title' => 'Error no portal Administração Acadêmica > Operações de Alunos > Visualizar Alunos',
-                'number' => 4871,
-                'requester' => 'Cilda Chongola',
-                'link' => 'https://www.srv.fenix.es',
-                'time' => 'Ontem',
-                'service' => 'SRV_FENIX',
-                'icon' => 'fenix',
-                'priority' => 'alta',
-                'status' => 'Pendentes'
-            ],
-            [
-                'id' => 4869,
-                'title' => 'Error no portal Comunicação > Novidades',
-                'number' => 4869,
-                'requester' => 'Ilidio Francisco Matola',
-                'link' => 'https://www.srv.fenix.es',
-                'time' => 'Ontem',
-                'service' => 'SRV_FENIX',
-                'icon' => 'fenix',
-                'priority' => 'baixa',
-                'status' => 'Pendentes'
-            ],
-            [
-                'id' => 4868,
-                'title' => 'Error no portal Estudante > Inscrever > Renovação',
-                'number' => 4868,
-                'requester' => 'Lourenço Maclau Vilanculo Junior',
-                'link' => 'https://www.srv.fenix.es',
-                'time' => 'Ontem',
-                'service' => 'SRV_FENIX',
-                'icon' => 'fenix',
-                'priority' => 'alta',
-                'status' => 'Pendentes'
-            ],
-        ],
-        'Em Progresso' => [
-            [
-                'id' => 4848,
-                'title' => 'Actualizações no website ISUTC',
-                'number' => 4848,
-                'requester' => 'Francisca Chacha',
-                'link' => 'https://www.wb-esite.com.br',
-                'time' => 'Há 9 dia(s)',
-                'service' => 'SRV_WEBSITE',
-                'icon' => 'website',
-                'priority' => 'média',
-                'status' => 'Em Progresso'
-            ],
-            [
-                'id' => 4793,
-                'title' => 'Problemas de lançamento de notas da segunda época',
-                'number' => 4793,
-                'requester' => 'Rabecca Fênix Cuna',
-                'link' => 'https://www.srv.fenix.es',
-                'time' => 'Em 3 dia(s)',
-                'service' => 'SRV_FENIX',
-                'icon' => 'fenix',
-                'priority' => 'alta',
-                'status' => 'Em Progresso'
-            ],
-        ],
-        'Concluídos' => [
-            [
-                'id' => 4842,
-                'title' => 'Error ao definir assiduidade mínima no fenix-intensivo',
-                'number' => 4842,
-                'requester' => 'Daniela Alexandra Augusto',
-                'link' => 'https://www.srv.fenix.es',
-                'time' => 'Há 9 dia(s)',
-                'service' => 'SRV_FENIX',
-                'icon' => 'fenix',
-                'priority' => 'baixa',
-                'status' => 'Concluídos'
-            ],
-        ]
+    public  $states = [
+        'new' => [],
+        'contacted' => [],
+        'qualified' => [],
+        'proposal' => [],
+        'negotiation' => [],
+        'won' => [],
+        'lost' => [],
     ];
 
     public $newStateName = '';
@@ -118,7 +26,7 @@ class KanbanBoard extends Component
     public $filterPriority = 'todos';
 
     // Propriedades para ordenação
-    public $sortField = 'number';
+    public $sortField = 'id';
     public $sortDirection = 'desc';
 
     public function addState()
@@ -176,18 +84,18 @@ class KanbanBoard extends Component
         }
 
         $newId = rand(5000, 9999);
-        $this->states[$stateName][] = [
-            'id' => $newId,
-            'title' => 'Novo Item #' . $newId,
-            'number' => $newId,
-            'requester' => 'Novo Solicitante',
-            'link' => 'https://www.example.com',
-            'time' => 'Agora',
-            'service' => 'SRV_NOVO',
-            'icon' => 'novo',
-            'priority' => 'média',
-            'status' => $stateName
-        ];
+//        $this->states[$stateName][] = [
+//            'id' => $newId,
+//            'title' => 'Novo Item #' . $newId,
+//            'number' => $newId,
+//            'requester' => 'Novo Solicitante',
+//            'link' => 'https://www.example.com',
+//            'time' => 'Agora',
+//            'service' => 'SRV_NOVO',
+//            'icon' => 'novo',
+//            'priority' => 'média',
+//            'status' => $stateName
+//        ];
     }
 
     public function switchView($mode)
@@ -245,9 +153,9 @@ class KanbanBoard extends Component
             $field = $this->sortField;
             $direction = $this->sortDirection === 'asc' ? 1 : -1;
 
-            if ($field === 'number') {
-                return ($a[$field] - $b[$field]) * $direction;
-            }
+//            if ($field === 'number') {
+//                return ($a[$field] - $b[$field]) * $direction;
+//            }
 
             return strcmp($a[$field] ?? '', $b[$field] ?? '') * $direction;
         });
@@ -255,6 +163,66 @@ class KanbanBoard extends Component
         return $allItems;
     }
 
+    public function mount()
+    {
+        $leads = Leads::query()->where('company_id', auth()->user()->company_id)->get();
+
+        foreach ($leads as $lead) {
+
+            // fallback de segurança
+            if (! array_key_exists($lead->status, $this->states)) {
+                continue;
+            }
+
+            $this->states[$lead->status][] = [
+                'id' => $lead->id,
+                'client_id' => $lead->client_id,
+                'reference' => $lead->reference,
+                'title' => $lead->title,
+                'description' => $lead->description,
+                'status' => $lead->status,
+
+                'value' => $lead->value,
+                'expected_' => $lead->expected_,
+                'close_date' => $lead->close_date,
+                'source' => $lead->source,
+
+                // opcional p/ UI
+                'time' => $lead->close_date
+                    ? Carbon::parse($lead->close_date)->diffForHumans()
+                    : null,
+            ];
+        }
+    }
+
+    public function loadMessages()
+    {
+//        // Carregar mensagens do banco de dados
+//        $dbMessages = Messages::where('sender_id', auth()->user()->id)
+//            ->orderBy('created_at', 'desc')
+//            ->get()
+//            ->map(function ($message) {
+//                return [
+//                    'id' => $message->id,
+//                    'date' => $message->created_at->format('d \d\e F \d\e Y'),
+//                    'author' => $message->client == null ? $message->sender->name : $message->client->name ?? "N/A",
+//                    'time_ago' => $message->created_at->diffForHumans(),
+//                    'content' => $message->content,
+//                    'type' => $this->determineMessageType($message->channel, $message->metadata),
+//                    'channel' => $message->channel,
+//                    'direction' => $message->direction
+//                ];
+//            })
+//            ->toArray();
+//
+//        // Combinar com mensagens estáticas (notes e status changes)
+//        $this->messages = array_merge($dbMessages, $this->getStaticMessages());
+//
+//        // Ordenar por data
+//        usort($this->messages, function ($a, $b) {
+//            return strtotime($b['date']) - strtotime($a['date']);
+//        });
+    }
     public function render()
     {
         return view('livewire.kanban-board', [

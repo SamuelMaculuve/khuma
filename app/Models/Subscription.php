@@ -6,10 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class Subscription extends Model
 {
-    protected $fillable = ['user_id', 'plan', 'start_date', 'end_date'];
+    protected $fillable = [
+        'user_id',
+        'plan_id',
+        'status',
+        'started_at',
+        'renews_at'
+    ];
 
-    public function user()
+    public function plan()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function cycles()
+    {
+        return $this->hasMany(SubscriptionCycle::class);
+    }
+
+    public function currentCycle()
+    {
+        return $this->cycles()->latest()->first();
     }
 }
+

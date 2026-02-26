@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string("profilePic")->nullable();
             $table->string("info")->nullable();
             $table->boolean("isBusiness")->default(false);
+            $table->text('prompt')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

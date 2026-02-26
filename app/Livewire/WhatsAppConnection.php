@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppConnection extends Component
 {
-    public $phone = '258848293580';
+    public $country_code = '+258';
+    public $phone = '';
     public $currentInstance = '';
     public $baseUrl = 'https://free.uazapi.com';
 
@@ -17,6 +18,9 @@ class WhatsAppConnection extends Component
     public $loggedIn = false;
     public $qrcode = null;
     public $instanceData = null;
+
+    public $prompt = '';
+
     public $statusData = null;
     public $loading = false;
     public $error = null;
@@ -32,6 +36,13 @@ class WhatsAppConnection extends Component
 
     public function connect()
     {
+        $this->validate([
+            'country_code' => 'required',
+            'phone' => 'required|numeric|min:7',
+        ]);
+
+        $fullPhone = $this->country_code . $this->phone;
+
         $this->loading = true;
         $this->error = null;
         $this->manualQrcode = null; // Resetamos o QR code manual
@@ -42,7 +53,7 @@ class WhatsAppConnection extends Component
                 'Content-Type' => 'application/json',
                 'token' => $this->currentInstance->token,
             ])->post($this->baseUrl . '/instance/connect', [
-                'phone' => $this->phone
+                'phone' => $fullPhone
             ]);
 
             if ($response->successful()) {
@@ -52,6 +63,7 @@ class WhatsAppConnection extends Component
                 $this->loggedIn = $data['loggedIn'] ?? false;
                 $this->manualQrcode = $data['instance']['qrcode'] ?? null; // Guardamos o QR code manual
                 $this->qrcode = $this->manualQrcode; // Exibimos o QR code manual
+                $this->enableWebhook();
 
             } else {
                 $this->error = 'Erro ao conectar: ' . $response->body();
@@ -102,6 +114,7 @@ class WhatsAppConnection extends Component
 
             $this->currentInstance->delete();
             $this->cleanVariables();
+            $this->currentInstance = null;
 
             Log::info('ERROR DELETE INSTANCE:', ['response' => $response]);
 
@@ -169,11 +182,31 @@ class WhatsAppConnection extends Component
         $this->loggedIn = false;
         $this->qrcode = null;
         $this->manualQrcode = null; // Limpa o QR code manual
-        $this->currentInstance = null;
     }
 
     public function render()
     {
         return view('livewire.whats-app-connection');
+    }
+
+    public function enableWebhook()
+    {
+        $response = Http::withHeaders([
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            'token' => $this->currentInstance->token,
+        ])->post($this->baseUrl . '/webhook', [
+            "enabled"=> true,
+            'url' => "https://workflow.mazedeve.com/webhook/50984dd5-358c-473f-a9fe-98d682878db8",
+            "events"=> [
+                "messages"
+            ]
+        ]);
+
+        if ($response->successful()) {
+            Log::info("Webhook Created", ['response'=> $response->json()]);
+        }else{
+            Log::error("ERROR Creating Webhook", ['response'=> $response->body()]);
+        }
     }
 }

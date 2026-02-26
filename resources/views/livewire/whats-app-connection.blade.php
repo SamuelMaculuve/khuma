@@ -52,7 +52,7 @@
                         </div>
 
                         <!-- Indicador de Loading do Polling -->
-                        @if ($connected != 'connected' && $connected != 'close' && $connected != 'open')
+                        @if ($connected != 'connected' && $connected != 'close' && $connected != 'open' && $currentInstance->id != null)
                             <div class="flex items-center text-blue-600">
                                 <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
                                     viewBox="0 0 24 24">
@@ -113,8 +113,8 @@
                 @endif
                 <button wire:click="deleteInstance"
                     class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center text-sm
-            {{ !$currentInstance ? 'hidden' : '' }} "
-                    {{ $connected != 'connected' && $connected != 'open' ? 'disabled' : '' }}>
+            {{ $currentInstance->id == null ? 'hidden' : '' }} "
+                    {{ $connected == 'open' ? 'disabled' : '' }}>
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
@@ -141,7 +141,13 @@
                     </div>
                     <div class="flex flex-col items-center">
                         <div class="bg-white p-4 rounded-lg border-2 border-dashed border-blue-300 mb-4">
-                            <img src="{{ $qrcode }}" alt="QR Code WhatsApp" class="w-64 h-64">
+                            @if ($qrcode)
+                                <img src="{{ $qrcode }}" alt="QR Code WhatsApp" class="w-64 h-64">
+                            @else
+                                <div class="bg-white p-4 rounded-lg border-2 border-dashed border-red-300 mb-4">
+                                    <span class="text-orange-400">QR Code não disponível, actualize para gerar um novo
+                                        QR Code</span>
+                            @endif
                         </div>
                         <p class="text-gray-600 text-center mb-4">
                             Abra o WhatsApp no seu celular, toque em <strong>Menu</strong> → <strong>WhatsApp
@@ -175,7 +181,7 @@
             </div>
 
             <x-prompt-input myclass="{{ $connected != 'connected' && $connected != 'open' ? 'hidden' : '' }}"
-                :model="$currentInstance" field="prompt"  />
+                :model="$currentInstance" field="prompt" />
 
             <!-- Botões de Ação -->
             <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -228,7 +234,7 @@
                 @endif
 
                 <!-- Botão Desconectar -->
-                @if ($connected == 'connected')
+                @if ($connected == 'connected' || $connected == 'open')
                     <button wire:click="disconnect" wire:loading.attr="disabled" wire:target="disconnect"
                         class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                         @if ($loading)

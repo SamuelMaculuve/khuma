@@ -32,7 +32,7 @@ class WhatsAppConnection extends Component
 
     public function mount()
     {
-        $this->currentInstance = Auth::user()->instance;
+        $this->currentInstance = Auth::user()->instance ?? new Instance();
         $this->prompt = $this->currentInstance->prompt ?? ''; // ADD THIS
 
         $this->baseUrl = config('app.use_uazapi') ? 'https://free.uazapi.com' : config('app.evolution_api_url');
@@ -182,7 +182,7 @@ class WhatsAppConnection extends Component
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
                     "apikey" => $token,
-                ])->get($url, []);
+                ])->delete($url, []);
 
                 if ($response->successful()) {
                     $data = $response->json();
@@ -226,7 +226,7 @@ class WhatsAppConnection extends Component
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
                     "apikey" => $token,
-                ])->get($url, []);
+                ])->delete($url, []);
 
                 if ($response->successful()) {
                     $data = $response->json();
@@ -260,7 +260,7 @@ class WhatsAppConnection extends Component
     public function checkStatus()
     {
         try {
-            if ($this->isEvolution && $this->currentInstance != null) {
+            if ($this->isEvolution && $this->currentInstance != new Instance()) {
                 $instance_name = $this->currentInstance->name;
                 $url = $this->baseUrl . "/instance/connectionState/$instance_name";
                 $token = config('app.evolution_api_key');
@@ -274,6 +274,7 @@ class WhatsAppConnection extends Component
                     $data = $response->json();
 
                     $this->connected = $data['instance']['state'] ?? 'connecting';
+                    Log::info('Instance Connection State', ['connected' => $this->connected]);
                     if ($this->connected == 'open') {
                         $this->currentInstance->status =  'connected';
                     } elseif ($this->connected == 'close') {
@@ -340,7 +341,7 @@ class WhatsAppConnection extends Component
     public function cleanVariables($data = null)
     {
         $this->instanceData = $data['instance'] ?? null;
-        $this->connected = false;
+        $this->connected = 'close';
         $this->loggedIn = false;
         $this->qrcode = null;
         $this->manualQrcode = null; // Limpa o QR code manual

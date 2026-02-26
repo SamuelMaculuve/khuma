@@ -9,6 +9,9 @@ use App\Http\Controllers\InstanceController;
 use App\Http\Controllers\LeadsController;
 use App\Livewire\Subscription\ChoosePlan;
 use App\Livewire\Subscription\Checkout;
+use App\Livewire\Subscription\Confirm;
+use App\Livewire\Subscription\Success;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -32,22 +35,27 @@ Route::middleware('auth')->group(function () {
         return view('admin.manage.index');
     })->name('manage');
 
-
-
     Route::get('/subscription/plans', function () {
         return view('subscription.index');
     })->name('subscription.plans');
 
-    Route::get('/subscription/payment/{id}', function ($id) {
-        $plan = \App\Models\Plan::findOrFail($id);
-        return view('livewire.subscription.confirm', compact('plan'));
-    })->name('subscription.checkout');
-
+    Route::get('/subscription/checkout/{plan}', Checkout::class)->name('subscription.checkout');
+    Route::get('/subscription/confirm/{plan}', Confirm::class)->name('subscription.confirm');
     Route::view('/subscription/success', 'subscription.success')->name('subscription.success');
+
+    // Perfil com Livewire (substitui os controllers do Breeze para profile)
+    Route::get('/profile', \App\Livewire\Profile::class)->name('profile.edit');
+    // Histórico de pagamentos
+    Route::get('/subscription/payments', \App\Livewire\Subscription\Payments::class)
+        ->name('subscription.payments');
+
+    // Download de comprovativo PDF
+    Route::get('/receipt/{payment}/download', [\App\Http\Controllers\ReceiptController::class, 'download'])
+        ->name('receipt.download');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+//    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });

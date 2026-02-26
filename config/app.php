@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Facade;
+
 return [
 
     /*
@@ -122,5 +124,16 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+//    'providers' => [
+//        /*
+//        * Package Service Providers...
+//        */
+//        RealRashid\SweetAlert\SweetAlertServiceProvider::class,
+//    ],
+//
+//    'aliases' => Facade::defaultAliases()->merge([
+//        'Alert' => RealRashid\SweetAlert\Facades\Alert::class,
+//    ])->toArray(),
 
 ];

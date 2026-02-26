@@ -3,26 +3,24 @@
 namespace App\Livewire\Subscription;
 
 use Livewire\Component;
-
 use App\Models\Plan;
-
-
+#[Layout('layouts.app')]
 class ChoosePlan extends Component
 {
-    public $selectedPlanId = null;
+    public ?int $selectedPlanId = null;
 
-
-    public function selectPlan($planId)
+    public function selectPlan(int $planId): void
     {
         $this->selectedPlanId = $planId;
     }
 
-
-    public function continue()
+    public function continue(): void
     {
-        $this->redirectRoute('subscription.checkout', $this->selectedPlanId);
-    }
+        $this->validate(['selectedPlanId' => 'required|exists:plans,id']);
 
+        // Vai directo para o confirm (checkout pode ser removido ou mantido como preview)
+        $this->redirectRoute('subscription.confirm', ['plan' => $this->selectedPlanId]);
+    }
 
     public function render()
     {

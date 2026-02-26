@@ -5,7 +5,7 @@
         </h2>
 
         <div class="max-w-xl mx-auto py-12">
-        <h1 class="text-2xl font-bold mb-6">Confirmar Subscrição</h1>
+        <h1 class="text-2xl font-bold mb-6">Confirmar Subscrição  - 1</h1>
 
 
         <div class="border rounded-xl p-6 shadow">

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('subscription_id')->constrained()->cascadeOnDelete();
             $table->decimal('price', 10, 2);
             $table->string('currency')->default('MZN');
-            $table->timestamp('period_start');
-            $table->timestamp('period_end');
+            $table->date('period_start');
+            $table->date('period_end');
             $table->string('status')->default('pending');
             $table->timestamps();
         });

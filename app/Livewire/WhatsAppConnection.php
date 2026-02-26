@@ -174,16 +174,36 @@ class WhatsAppConnection extends Component
         $this->error = null;
 
         try {
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'token' => $this->currentInstance->token,
-            ])->post($this->baseUrl . '/instance/disconnect');
+            if ($this->isEvolution) {
+                $instance_name = $this->currentInstance->name;
+                $url = $this->baseUrl . "/instance/logout/$instance_name";
+                $token = config('app.evolution_api_key');
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    "apikey" => $token,
+                ])->get($url, []);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $this->cleanVariables($data);
+                if ($response->successful()) {
+                    $data = $response->json();
+
+                    $this->checkStatus(); // Verifica o status após desconectar
+                } else {
+                    Log::error('Erro ao conectar: ' . $response->body());
+                    $this->error = 'Erro ao conectar: ' . $response->body();
+                }
             } else {
-                $this->error = 'Erro ao desconectar: ' . $response->body();
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'token' => $this->currentInstance->token,
+                ])->post($this->baseUrl . '/instance/disconnect');
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $this->cleanVariables($data);
+                } else {
+                    $this->error = 'Erro ao desconectar: ' . $response->body();
+                }
             }
         } catch (\Exception $e) {
             $this->error = 'Erro: ' . $e->getMessage();
@@ -198,17 +218,38 @@ class WhatsAppConnection extends Component
         $this->error = null;
 
         try {
+            if ($this->isEvolution) {
+                $instance_name = $this->currentInstance->name;
+                $url = $this->baseUrl . "/instance/delete/$instance_name";
+                $token = config('app.evolution_api_key');
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    "apikey" => $token,
+                ])->get($url, []);
 
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'token' => $this->currentInstance->token,
-            ])->delete($this->baseUrl . '/instance');
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $this->currentInstance->delete();
+                    $this->cleanVariables();
+                    $this->currentInstance = new Instance();
+                    $this->checkStatus(); // Verifica o status após desconectar
+                } else {
+                    Log::error('Erro ao conectar: ' . $response->body());
+                    $this->error = 'Erro ao conectar: ' . $response->body();
+                }
+            } else {
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'token' => $this->currentInstance->token,
+                ])->delete($this->baseUrl . '/instance');
 
-            $this->currentInstance->delete();
-            $this->cleanVariables();
-            $this->currentInstance = new Instance();
+                $this->currentInstance->delete();
+                $this->cleanVariables();
+                $this->currentInstance = new Instance();
 
-            Log::info('ERROR DELETE INSTANCE:', ['response' => $response]);
+                Log::info('ERROR DELETE INSTANCE:', ['response' => $response]);
+            }
         } catch (\Exception $e) {
             $this->error = 'Erro: ' . $e->getMessage();
         }
@@ -219,7 +260,7 @@ class WhatsAppConnection extends Component
     public function checkStatus()
     {
         try {
-            if ($this->isEvolution) {
+            if ($this->isEvolution && $this->currentInstance != null) {
                 $instance_name = $this->currentInstance->name;
                 $url = $this->baseUrl . "/instance/connectionState/$instance_name";
                 $token = config('app.evolution_api_key');
@@ -231,12 +272,17 @@ class WhatsAppConnection extends Component
 
                 if ($response->successful()) {
                     $data = $response->json();
-                    // Log::info('Instance Status', ['response' => $data]);
 
                     $this->connected = $data['instance']['state'] ?? 'connecting';
-                    // $this->loggedIn = $data['loggedIn'] ?? false;
+                    if ($this->connected == 'open') {
+                        $this->currentInstance->status =  'connected';
+                    } elseif ($this->connected == 'close') {
+                        $this->currentInstance->status = 'disconnected';
+                    } else {
+                        $this->currentInstance->status = $this->connected;
+                    }
 
-
+                    $this->currentInstance->save();
                 } else {
                     Log::error('Erro ao conectar: ' . $response->body());
                     $this->error = 'Erro ao conectar: ' . $response->body();

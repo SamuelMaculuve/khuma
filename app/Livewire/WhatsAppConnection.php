@@ -6,13 +6,15 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class WhatsAppConnection extends Component
 {
     public $country_code = '+258';
     public $phone = '';
-    public $currentInstance = '';
-    public $baseUrl = 'https://free.uazapi.com';
+    public $currentInstance = null;
+    public $baseUrl = '';
+    public $isEvolution = true;
 
     public $connected = false;
     public $loggedIn = false;
@@ -30,7 +32,8 @@ class WhatsAppConnection extends Component
     public function mount()
     {
         $this->currentInstance = Auth::user()->instance;
-
+        $this->baseUrl = config('app.use_uazapi') ? 'https://free.uazapi.com' : config('app.evolution_api_url');
+        $this->isEvolution = config('app.use_evolution');
         $this->checkStatus();
     }
 
@@ -41,32 +44,109 @@ class WhatsAppConnection extends Component
             'phone' => 'required|numeric|min:7',
         ]);
 
-        $fullPhone = $this->country_code . $this->phone;
+        $fullPhone = str_replace('+', '', $this->country_code) . $this->phone;
 
         $this->loading = true;
         $this->error = null;
         $this->manualQrcode = null; // Resetamos o QR code manual
 
         try {
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-                'token' => $this->currentInstance->token,
-            ])->post($this->baseUrl . '/instance/connect', [
-                'phone' => $fullPhone
-            ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $this->instanceData = $data['instance'] ?? null;
-                $this->connected = $data['connected'] ?? false;
-                $this->loggedIn = $data['loggedIn'] ?? false;
-                $this->manualQrcode = $data['instance']['qrcode'] ?? null; // Guardamos o QR code manual
-                $this->qrcode = $this->manualQrcode; // Exibimos o QR code manual
-                $this->enableWebhook();
+            if ($this->isEvolution) {
+                $url = $this->baseUrl . '/instance/create';
+                $token = config('app.evolution_api_key');
+                Log::info('Connecting to Evolution API', ['url' => $url, 'phone' => $fullPhone, 'token' => $token]);
+                $user = Auth::user();
+                $instance_name = "Instance-{$user->id}-" . Str::random(5);
+
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    "apikey" => $token,
+                ])->post($url, [
+                    'instanceName' => $instance_name,
+                    'integration' => 'WHATSAPP-BAILEYS',
+                    'qrcode' => true,
+                    'webhook' => [
+                        'url' => 'https://workflow.mazedeve.com/webhook-test/dabb4939-e474-4296-b301-74d62b8462fc',
+                        'byEvents' => true,
+                        'base64' => true,
+                        'events' => [
+                            'MESSAGES_UPSERT',
+                            'MESSAGE_DELETED',
+                            'SEND_MESSAGE',
+                            'PRESENCE_UPDATE',
+                            'MESSAGES_UPDATE',
+                        ]
+                    ]
+                ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    Log::info('Instance Created', ['response' => $data]);
+                    $this->generateQrCode($instance_name);
+                    // $this->instanceData = $data['instance'] ?? null;
+                    // $this->connected = $data['connected'] ?? false;
+                    // $this->loggedIn = $data['loggedIn'] ?? false;
+
+
+                } else {
+                    Log::error('Erro ao conectar: ' . $response->body());
+                    $this->error = 'Erro ao conectar: ' . $response->body();
+                }
+
+                // curl_setopt_array($curl, [
+                //     CURLOPT_URL => $url,
+                //     CURLOPT_RETURNTRANSFER => true,
+                //     CURLOPT_ENCODING => "",
+                //     CURLOPT_MAXREDIRS => 10,
+                //     CURLOPT_TIMEOUT => 30,
+                //     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                //     CURLOPT_CUSTOMREQUEST => "POST",
+                //     CURLOPT_POSTFIELDS => json_encode([
+                //         'instanceName' => $instance_name,
+                //         'integration' => 'WHATSAPP-BAILEYS',
+                //         'qrcode' => true,
+                //         'webhook' => [
+                //             'url' => 'https://workflow.mazedeve.com/webhook-test/dabb4939-e474-4296-b301-74d62b8462fc',
+                //             'byEvents' => true,
+                //             'base64' => true,
+                //             'events' => [
+                //                 'MESSAGES_UPSERT',
+                //                 'MESSAGE_DELETED',
+                //                 'SEND_MESSAGE',
+                //                 'PRESENCE_UPDATE',
+                //                 'MESSAGES_UPDATE',
+                //             ]
+                //         ]
+                //     ]),
+                //     CURLOPT_HTTPHEADER => [
+                //         "Content-Type: application/json",
+                //         "apikey: $token"
+                //     ],
+                // ]);
 
             } else {
-                $this->error = 'Erro ao conectar: ' . $response->body();
+
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'token' => $this->currentInstance->token,
+                ])->post($this->baseUrl . '/instance/connect', [
+                    'phone' => $fullPhone
+                ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $this->instanceData = $data['instance'] ?? null;
+                    $this->connected = $data['connected'] ?? false;
+                    $this->loggedIn = $data['loggedIn'] ?? false;
+                    $this->manualQrcode = $data['instance']['qrcode'] ?? null; // Guardamos o QR code manual
+                    $this->qrcode = $this->manualQrcode; // Exibimos o QR code manual
+                    $this->enableWebhook();
+                } else {
+                    $this->error = 'Erro ao conectar: ' . $response->body();
+                }
             }
         } catch (\Exception $e) {
             $this->error = 'Erro: ' . $e->getMessage();
@@ -89,7 +169,6 @@ class WhatsAppConnection extends Component
             if ($response->successful()) {
                 $data = $response->json();
                 $this->cleanVariables($data);
-
             } else {
                 $this->error = 'Erro ao desconectar: ' . $response->body();
             }
@@ -117,7 +196,6 @@ class WhatsAppConnection extends Component
             $this->currentInstance = null;
 
             Log::info('ERROR DELETE INSTANCE:', ['response' => $response]);
-
         } catch (\Exception $e) {
             $this->error = 'Erro: ' . $e->getMessage();
         }
@@ -128,45 +206,48 @@ class WhatsAppConnection extends Component
     public function checkStatus()
     {
         try {
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'token' => $this->currentInstance->token,
-            ])->get($this->baseUrl . '/instance/status');
+            if ($this->isEvolution) {
+                return;
+            } else {
+                $response = Http::withHeaders([
+                    'Accept' => 'application/json',
+                    'token' => $this->currentInstance->token,
+                ])->get($this->baseUrl . '/instance/status');
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $this->statusData = $data;
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $this->statusData = $data;
 
-                $this->connected = $data['status']['connected'] ?? false;
-                $this->loggedIn = $data['status']['loggedIn'] ?? false;
-                $this->instanceData = $data['instance'] ?? null;
+                    $this->connected = $data['status']['connected'] ?? false;
+                    $this->loggedIn = $data['status']['loggedIn'] ?? false;
+                    $this->instanceData = $data['instance'] ?? null;
 
-                if ($this->connected && $this->loggedIn) {
-                    $this->manualQrcode = null;
-                    $this->qrcode = null;
+                    if ($this->connected && $this->loggedIn) {
+                        $this->manualQrcode = null;
+                        $this->qrcode = null;
 
-                    $this->currentInstance->profilePic = $data['instance']['profilePicUrl'] ?? null;
-                    $this->currentInstance->status = $data['instance']['status'];
-                    $this->currentInstance->isBusiness = $data['instance']['isBusiness'];
-                    $this->currentInstance->profileName = $data['instance']['profileName'];
-                    $this->currentInstance->update();
-
-                } else {
-                    // Se temos um QR code manual
-                    if ($this->manualQrcode) {
-                        // Verifica se a API retornou um QR code diferente do manual
-                        $apiQrcode = $data['instance']['qrcode'] ?? null;
-                        if ($apiQrcode && $apiQrcode !== $this->manualQrcode) {
-                            // O QR code manual expirou, atualizamos com o novo da API
-                            $this->manualQrcode = $apiQrcode;
-                            $this->qrcode = $apiQrcode;
-                        } else {
-                            // Mantemos o QR code manual
-                            $this->qrcode = $this->manualQrcode;
-                        }
+                        $this->currentInstance->profilePic = $data['instance']['profilePicUrl'] ?? null;
+                        $this->currentInstance->status = $data['instance']['status'];
+                        $this->currentInstance->isBusiness = $data['instance']['isBusiness'];
+                        $this->currentInstance->profileName = $data['instance']['profileName'];
+                        $this->currentInstance->update();
                     } else {
-                        // Não temos QR code manual, usamos o da API
-                        $this->qrcode = $data['instance']['qrcode'] ?? null;
+                        // Se temos um QR code manual
+                        if ($this->manualQrcode) {
+                            // Verifica se a API retornou um QR code diferente do manual
+                            $apiQrcode = $data['instance']['qrcode'] ?? null;
+                            if ($apiQrcode && $apiQrcode !== $this->manualQrcode) {
+                                // O QR code manual expirou, atualizamos com o novo da API
+                                $this->manualQrcode = $apiQrcode;
+                                $this->qrcode = $apiQrcode;
+                            } else {
+                                // Mantemos o QR code manual
+                                $this->qrcode = $this->manualQrcode;
+                            }
+                        } else {
+                            // Não temos QR code manual, usamos o da API
+                            $this->qrcode = $data['instance']['qrcode'] ?? null;
+                        }
                     }
                 }
             }
@@ -175,7 +256,7 @@ class WhatsAppConnection extends Component
         }
     }
 
-    public function cleanVariables($data=null)
+    public function cleanVariables($data = null)
     {
         $this->instanceData = $data['instance'] ?? null;
         $this->connected = false;
@@ -196,17 +277,43 @@ class WhatsAppConnection extends Component
             'Content-Type' => 'application/json',
             'token' => $this->currentInstance->token,
         ])->post($this->baseUrl . '/webhook', [
-            "enabled"=> true,
+            "enabled" => true,
             'url' => "https://workflow.mazedeve.com/webhook/50984dd5-358c-473f-a9fe-98d682878db8",
-            "events"=> [
+            "events" => [
                 "messages"
             ]
         ]);
 
         if ($response->successful()) {
-            Log::info("Webhook Created", ['response'=> $response->json()]);
-        }else{
-            Log::error("ERROR Creating Webhook", ['response'=> $response->body()]);
+            Log::info("Webhook Created", ['response' => $response->json()]);
+        } else {
+            Log::error("ERROR Creating Webhook", ['response' => $response->body()]);
         }
+    }
+
+    public function generateQrCode($name)
+    {
+        $url = $this->baseUrl . "/instance/connect/$name";
+        $token = config('app.evolution_api_key');
+        $response = Http::withHeaders([
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+            "apikey" => $token,
+        ])->get($url, []);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            Log::info('Instance QR code', ['response' => $data]);
+            // $this->instanceData = $data['instance'] ?? null;
+            // $this->connected = $data['connected'] ?? false;
+            // $this->loggedIn = $data['loggedIn'] ?? false;
+
+
+        } else {
+            $this->error = 'Erro ao gerar qr code: ' . $response->body();
+        }
+
+        // $this->manualQrcode = $data['instance']['qrcode'] ?? null; // Guardamos o QR code manual
+        // $this->qrcode = $this->manualQrcode;
     }
 }

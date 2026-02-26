@@ -116,6 +116,7 @@ class MessagesController extends Controller
         if (!$lead) {
             $lead = Leads::create([
                 'client_id' => $client->id,
+                'company_id' => $instance->user->company_id,
                 'reference' => 'LEAD-' . strtoupper(Str::random(8)),
                 'title' => 'Contacto via WhatsApp',
                 'description' => 'Lead criada automaticamente a partir de mensagem WhatsApp',

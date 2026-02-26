@@ -123,4 +123,10 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+
+    'use_uazapi' => env('USE_UAZAPI', false),
+    'use_evolution' => env('USE_EVOLUTIUON', true),
+    'evolution_api_key' => env('EVOLUTION_API_KEY'),
+    'evolution_api_url' => env('EVOLUTION_API_URL', 'https://evolution.mazedeve.com'),
+
 ];

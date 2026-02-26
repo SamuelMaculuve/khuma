@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Plan extends Model
 {
@@ -35,7 +36,10 @@ class Plan extends Model
     {
         return $this->hasMany(PlanPrice::class);
     }
-
+    public function activePrice(): HasOne
+    {
+        return $this->hasOne(PlanPrice::class)->where('is_active', true)->latest();
+    }
     public function currentPrice()
     {
         return $this->prices()

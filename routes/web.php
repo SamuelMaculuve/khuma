@@ -20,6 +20,7 @@ Route::get('/', function () {
 Route::get('dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+
     Route::get('/users', Users::class)->name('users.index');
     Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{user}/status', [UserController::class, 'updateStatus'])->name('users.updateStatus');
@@ -52,6 +53,8 @@ Route::middleware('auth')->group(function () {
     // Download de comprovativo PDF
     Route::get('/receipt/{payment}/download', [\App\Http\Controllers\ReceiptController::class, 'download'])
         ->name('receipt.download');
+
+    Route::get('/planos', \App\Livewire\Plans\PlanList::class)->name('plans.index');
 });
 
 Route::middleware('auth')->group(function () {

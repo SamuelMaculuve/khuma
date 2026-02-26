@@ -123,7 +123,7 @@
 
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('manage')" :active="request()->routeIs('manage')">
-                Administracao
+                Administração
             </x-responsive-nav-link>
         </div>
 

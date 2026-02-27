@@ -12,8 +12,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
-    })
+        $middleware->alias([
+            // Verifica apenas se a feature existe no plano
+            'plan.feature' => \App\Http\Middleware\CheckPlanFeature::class,
+            // Verifica feature + limite numérico vs. uso actual
+            'plan.limit'   => \App\Http\Middleware\CheckPlanFeatureLimit::class,
+        ]);
+    })->withProviders([
+        App\Providers\PlanFeatureServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+
     })->create();
+

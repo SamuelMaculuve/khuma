@@ -19,13 +19,13 @@ quarta-feira - 08h - 16h
     <textarea
     wire:model.live="prompt"   {{-- NOT wire:model.live="{{ $model->prompt }}" --}}
     x-on:input="count = $event.target.value.length"
-    maxlength="500"
+    maxlength="3000"
     rows="8"
     placeholder="{{ $placeholder }}"
     class="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500"
 >{{ $model->prompt }}</textarea>
 
     <div class="text-right text-xs text-gray-400 mt-1">
-        <span x-text="count"></span>/500
+        <span x-text="count"></span>/3000
     </div>
 </div>

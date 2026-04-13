@@ -58,7 +58,7 @@ class WhatsAppConnection extends Component
             if ($this->isEvolution) {
                 $url = $this->baseUrl . '/instance/create';
                 $token = config('app.evolution_api_key');
-                Log::info('Connecting to Evolution API', ['url' => $url, 'phone' => $fullPhone, 'token' => $token]);
+                $webhook_url = config('app.webhook_endpoint');
                 $user = Auth::user();
                 $instance_name = "Instance-{$user->id}-" . Str::random(5);
 
@@ -71,15 +71,12 @@ class WhatsAppConnection extends Component
                     'integration' => 'WHATSAPP-BAILEYS',
                     'qrcode' => true,
                     'webhook' => [
-                        'url' => 'https://workflow.mazedeve.com/webhook-test/dabb4939-e474-4296-b301-74d62b8462fc',
-                        'byEvents' => true,
+                        'url' => $webhook_url,
+                        'byEvents' => false,
                         'base64' => true,
                         'events' => [
                             'MESSAGES_UPSERT',
-                            'MESSAGE_DELETED',
                             'SEND_MESSAGE',
-                            'PRESENCE_UPDATE',
-                            'MESSAGES_UPDATE',
                         ]
                     ]
                 ]);
@@ -274,7 +271,7 @@ class WhatsAppConnection extends Component
                     $data = $response->json();
 
                     $this->connected = $data['instance']['state'] ?? 'connecting';
-                    Log::info('Instance Connection State', ['connected' => $this->connected]);
+                    // Log::info('Instance Connection State', ['connected' => $this->connected]);
                     if ($this->connected == 'open') {
                         $this->currentInstance->status =  'connected';
                     } elseif ($this->connected == 'close') {

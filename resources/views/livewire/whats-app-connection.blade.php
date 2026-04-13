@@ -129,7 +129,7 @@
                 <div class="mb-8 bg-white rounded-lg p-6 border border-gray-200">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-gray-800">Escaneie o QR Code</h3>
-                        <button wire:click="refreshQrCode" wire:loading.attr="disabled"
+                        <button wire:click="newqrcode" wire:loading.attr="disabled"
                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center text-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -209,29 +209,6 @@
                     </button>
                 @endif
 
-                @if ($connected == 'connecting')
-                    <button wire:click="newqrcode" wire:loading.attr="disabled" wire:target="newqrcode"
-                        class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
-                        @if ($loading)
-                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10"
-                                    stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                            Carregando...
-                        @else
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4">
-                                </path>
-                            </svg>
-                            Novo Qr Code
-                        @endif
-                    </button>
-                @endif
 
                 <!-- Botão Desconectar -->
                 @if ($connected == 'connected' || $connected == 'open')

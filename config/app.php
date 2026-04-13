@@ -128,5 +128,7 @@ return [
     'use_evolution' => env('USE_EVOLUTIUON', true),
     'evolution_api_key' => env('EVOLUTION_API_KEY'),
     'evolution_api_url' => env('EVOLUTION_API_URL', 'https://evolution.mazedeve.com'),
+    'webhook_endpoint' => env('WEBHOOK_ENDPOINT', 'https://yourapp.com/webhook/evolution-api'),
+    'n8n_webhook_endpoint' => env('N8N_WEBHOOK_ENDPOINT', 'https://workflow.mazedeve.com/webhook-test/dabb4939-e474-4296-b301-74d62b8462fc'),
 
 ];

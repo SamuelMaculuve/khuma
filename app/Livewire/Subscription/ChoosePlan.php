@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Subscription;
 
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 use App\Models\Plan;
 
 
+#[Layout('layouts.app')]
 class ChoosePlan extends Component
 {
     public $selectedPlanId = null;

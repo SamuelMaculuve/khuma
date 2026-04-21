@@ -150,86 +150,143 @@
 
                         </div>
 
-                        <!-- Coluna da direita - Formulário para nova mensagem -->
-                        <div class="space-y-6">
-                            <div class="h-3/5 bg-white rounded-lg border border-gray-200 p-6">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Enviar mensagem</h3>
-                                <div class="space-y-3">
-                                            <div class="mb-2">
-                            <textarea
-                                wire:model="newMessage"
-                                rows="1"
-                                placeholder="Digite sua mensagem aqui..."
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            ></textarea>
-                                                <div class="mt-2 flex justify-end">
-                                                    <button
-                                                        wire:click="sendMessage"
-                                                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                                    >
-                                                        Enviar Mensagem
-                                                    </button>
-                                                </div>
-                                            </div>
+                        <!-- Coluna da direita -->
+                        <div class="space-y-4">
 
+                            {{-- Send message card --}}
+                            <div class="bg-white rounded-lg border border-gray-200 p-5">
+                                <h3 class="text-base font-semibold text-gray-800 mb-3">Enviar mensagem</h3>
 
-
-                                        </div>
-                                <!-- Lista de mensagens -->
-                                <div class="relative h-2/3 overflow-auto">
-                                     <div class="@if(!$hasChatAccess) blur-sm pointer-events-none select-none @endif overflow-auto h-full">
-
-                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Historico de Messagens</h3>
-                                    @foreach($messages as $message)
-                                        <div class="border-l-4
-                                    @if($message['type'] === 'status_change') border-yellow-500 bg-yellow-50
-                                    @elseif($message['type'] === 'note') border-gray-300 bg-gray-50
-                                    @else border-blue-500 bg-blue-50 @endif
-                                    pl-4 p-3 rounded-r-lg"
-                                        >
-                                            <div class="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <span class="font-medium text-gray-800">{{ $message['author'] }}</span>
-                                                    @if($message['type'] === 'status_change')
-                                                        <span class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-                                                    Alteração de Estado
-                                                </span>
-                                                    @endif
-                                                </div>
-                                                <div class="text-sm text-gray-500 text-right">
-                                                    <div>{{ $message['date'] }}</div>
-                                                    <div class="text-xs">{{ $message['time_ago'] }}</div>
-                                                </div>
-                                            </div>
-                                            <div class="text-sm text-gray-700">
-                                                {!! nl2br(e($message['content'])) !!}
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                     </div>
-                                     {{-- Overlay de bloqueio --}}
-                                @if(!$hasChatAccess)
-                                    <div class="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-                                        <div class="bg-white p-6 rounded-xl shadow-lg text-center max-w-sm">
-                                            <h4 class="text-lg font-bold mb-2">
-                                                🔒 Chat Premium
-                                            </h4>
-
-                                            <p class="text-sm text-gray-600 mb-4">
-                                                Faça upgrade do seu plano para visualizar e interagir com as mensagens.
-                                            </p>
-
-                                            <a href="#"
-                                            class="inline-block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-                                                Fazer Upgrade
-                                            </a>
-                                        </div>
+                                @if(session('error'))
+                                    <div class="flex items-center gap-2 px-3 py-2 mb-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                                        <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                                        {{ session('error') }}
                                     </div>
                                 @endif
+
+                                <div class="mb-3">
+                                    <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Canal</label>
+                                    <div class="flex gap-1 flex-wrap">
+                                        @foreach(['whatsapp' => 'WhatsApp', 'email' => 'Email', 'sms' => 'SMS', 'phone' => 'Telefone', 'in_person' => 'Presencial'] as $value => $label)
+                                            <button type="button"
+                                                wire:click="$set('channel', '{{ $value }}')"
+                                                class="px-3 py-1 text-xs font-medium rounded-full border transition-colors
+                                                       {{ $channel === $value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' }}">
+                                                {{ $label }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                    @if($channel === 'email')
+                                        @php $clientEmail = optional($lead->client)->email; @endphp
+                                        @if($clientEmail)
+                                            <p class="mt-1 text-xs text-green-600">Enviar para: {{ $clientEmail }}</p>
+                                        @else
+                                            <p class="mt-1 text-xs text-red-500">Cliente sem email registado.</p>
+                                        @endif
+                                    @endif
+                                </div>
+
+                                <textarea
+                                    wire:model="newMessage"
+                                    rows="3"
+                                    placeholder="Digite sua mensagem aqui..."
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                ></textarea>
+
+                                {{-- File attachment --}}
+                                <div class="mt-2">
+                                    <label class="flex items-center gap-2 cursor-pointer w-fit">
+                                        <div class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-600 hover:bg-gray-50 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                            Anexar ficheiro
+                                        </div>
+                                        <input type="file" wire:model="attachment" class="hidden" />
+                                    </label>
+                                    @if($attachment)
+                                        <div class="mt-1 flex items-center gap-2 px-2 py-1 bg-indigo-50 border border-indigo-200 rounded text-xs text-indigo-700">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                            {{ $attachment->getClientOriginalName() }}
+                                            <button type="button" wire:click="$set('attachment', null)" class="ml-1 text-indigo-400 hover:text-indigo-700">✕</button>
+                                        </div>
+                                        @error('attachment') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                                    @endif
+                                    <div wire:loading wire:target="attachment" class="mt-1 text-xs text-gray-400">A carregar...</div>
+                                </div>
+
+                                <div class="mt-2 flex justify-end">
+                                    <button wire:click="sendMessage" wire:loading.attr="disabled"
+                                        class="px-5 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50">
+                                        <span wire:loading.remove wire:target="sendMessage">Enviar Mensagem</span>
+                                        <span wire:loading wire:target="sendMessage">Enviando...</span>
+                                    </button>
                                 </div>
                             </div>
 
+                            {{-- Message history card --}}
+                            <div class="relative bg-white rounded-lg border border-gray-200">
+                                <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+                                    <h3 class="text-base font-semibold text-gray-800">Histórico de Mensagens</h3>
+                                    <span class="text-xs text-gray-400">{{ count($messages) }} mensagem(s)</span>
+                                </div>
 
+                                <div wire:poll.5s="loadMessages" class="@if(!$hasChatAccess) blur-sm pointer-events-none select-none @endif overflow-y-auto max-h-[420px] p-4 space-y-3">
+                                    @forelse($messages as $message)
+                                        <div class="border-l-4 pl-3 py-2 pr-2 rounded-r-lg
+                                            @if($message['type'] === 'status_change') border-yellow-400 bg-yellow-50
+                                            @elseif($message['type'] === 'note') border-gray-300 bg-gray-50
+                                            @elseif(($message['direction'] ?? '') === 'outbound') border-indigo-400 bg-indigo-50
+                                            @else border-green-400 bg-green-50 @endif">
+
+                                            <div class="flex justify-between items-start mb-1">
+                                                <div class="flex items-center gap-2 flex-wrap">
+                                                    <span class="text-sm font-medium text-gray-800">{{ $message['author'] }}</span>
+                                                    @if(($message['direction'] ?? '') === 'outbound')
+                                                        <span class="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded">enviado</span>
+                                                    @elseif(($message['direction'] ?? '') === 'inbound')
+                                                        <span class="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded">recebido</span>
+                                                    @endif
+                                                    @if(!empty($message['channel']))
+                                                        <span class="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">{{ $message['channel'] }}</span>
+                                                    @endif
+                                                    @if($message['type'] === 'status_change')
+                                                        <span class="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded">estado</span>
+                                                    @endif
+                                                </div>
+                                                <div class="text-xs text-gray-400 text-right shrink-0 ml-2">
+                                                    <div>{{ $message['time_ago'] }}</div>
+                                                </div>
+                                            </div>
+
+                                            @if(!empty($message['content']))
+                                                <p class="text-sm text-gray-700">{!! nl2br(e($message['content'])) !!}</p>
+                                            @endif
+                                            @if(!empty($message['attachment']))
+                                                <a href="{{ Storage::url($message['attachment']['path']) }}"
+                                                   target="_blank"
+                                                   class="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs text-gray-700 hover:bg-gray-50 transition-colors">
+                                                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                                                    {{ $message['attachment']['name'] }}
+                                                    <span class="text-gray-400">({{ round($message['attachment']['size'] / 1024, 1) }} KB)</span>
+                                                </a>
+                                            @endif
+                                        </div>
+                                    @empty
+                                        <div class="text-center py-8 text-gray-400 text-sm">
+                                            Nenhuma mensagem ainda.
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                @if(!$hasChatAccess)
+                                    <div class="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm rounded-lg">
+                                        <div class="bg-white p-6 rounded-xl shadow-lg text-center max-w-sm">
+                                            <h4 class="text-base font-bold mb-2">Chat Premium</h4>
+                                            <p class="text-sm text-gray-600 mb-4">Faça upgrade do seu plano para aceder às mensagens.</p>
+                                            <a href="#" class="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm">Fazer Upgrade</a>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
 
                         </div>
                     </div>
@@ -238,7 +295,6 @@
             </div>
         </div>
 
-        <div wire:poll.2s="loadMessages"></div>
 
     </div>
 

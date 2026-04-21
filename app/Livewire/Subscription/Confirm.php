@@ -1,6 +1,7 @@
 <?php
 namespace App\Livewire\Subscription;
 
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -8,6 +9,7 @@ use App\Models\Payment;
 use App\Services\MpesaService;
 use Illuminate\Support\Facades\Auth;
 
+#[Layout('layouts.app')]
 class Confirm extends Component
 {
     public Plan $plan;

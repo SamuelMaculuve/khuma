@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ProvisionTenantMailDomain;
 use App\Models\Companies;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -38,6 +39,8 @@ class RegisteredUserController extends Controller
         $companies = Companies::create([
             'name' => $request->company_name,
         ]);
+
+        ProvisionTenantMailDomain::dispatch($companies->id)->afterCommit();
 
         $user = User::create([
             'name' => $request->name,

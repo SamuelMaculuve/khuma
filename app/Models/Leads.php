@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Companies;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -32,6 +33,11 @@ class Leads extends Model
     public function histories(): HasMany
     {
         return $this->hasMany(LeadHistories::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Companies::class);
     }
 
     public function user(): BelongsTo

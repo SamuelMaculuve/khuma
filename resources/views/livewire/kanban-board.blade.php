@@ -41,9 +41,9 @@
                     </div>
                     <div class="flex space-x-2">
                         <button
-                            wire:click="addNewItem('{{ $stateName }}')"
+                            wire:click="openLeadForm('{{ $stateName }}')"
                             class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Adicionar item"
+                            title="Adicionar lead"
                         >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -54,7 +54,7 @@
                                 wire:click="removeState('{{ $stateName }}')"
                                 class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Remover estado"
-                                onclick="return confirm('Tem certeza que deseja remover este estado? Os itens serão movidos para "Pendentes".')"
+                                onclick="return confirm('Tem certeza que deseja remover este estado? Os itens serão movidos para Pendentes.')"
                             >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -151,7 +151,104 @@
         </div>
     </div>
 
-    <div wire:poll.2s="loadMessages"></div>
+    @if($showLeadForm)
+        <div
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            wire:click.self="closeLeadForm"
+            wire:key="lead-form-modal"
+        >
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        Novo Lead &mdash; <span class="text-blue-600">{{ $leadStatus }}</span>
+                    </h3>
+                    <button wire:click="closeLeadForm" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <form wire:submit.prevent="saveLead" class="px-6 py-5 space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-sm font-medium text-gray-700">Cliente</label>
+                            <button type="button" wire:click="toggleNewClient" class="text-xs font-medium text-blue-600 hover:text-blue-800">
+                                {{ $creatingNewClient ? '← Usar existente' : '+ Novo cliente' }}
+                            </button>
+                        </div>
+
+                        @if($creatingNewClient)
+                            <div class="space-y-2 border border-dashed border-blue-300 rounded-lg p-3 bg-blue-50/40">
+                                <input type="text" wire:model="new_client_name" placeholder="Nome do cliente *" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                @error('new_client_name') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <input type="email" wire:model="new_client_email" placeholder="email@exemplo.com" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        @error('new_client_email') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div>
+                                        <input type="text" wire:model="new_client_phone" placeholder="Telefone" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        @error('new_client_phone') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <select wire:model="lead_client_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Selecione um cliente</option>
+                                @foreach($availableClients as $client)
+                                    <option value="{{ $client['id'] }}">{{ $client['name'] }}</option>
+                                @endforeach
+                            </select>
+                            @error('lead_client_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        @endif
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                        <input type="text" wire:model="lead_title" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: Proposta de integração CRM">
+                        @error('lead_title') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                        <textarea wire:model="lead_description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Detalhes do lead..."></textarea>
+                        @error('lead_description') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                            <input type="number" step="0.01" min="0" wire:model="lead_value" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="0.00">
+                            @error('lead_value') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Data prevista</label>
+                            <input type="date" wire:model="lead_expected_close_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            @error('lead_expected_close_date') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fonte</label>
+                        <input type="text" wire:model="lead_source" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ex: Website, indicação, LinkedIn...">
+                        @error('lead_source') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" wire:click="closeLeadForm" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" wire:loading.attr="disabled" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
+                            <span wire:loading.remove wire:target="saveLead">Salvar Lead</span>
+                            <span wire:loading wire:target="saveLead">Salvando...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 
     <!-- JavaScript para Drag & Drop -->
     <script>

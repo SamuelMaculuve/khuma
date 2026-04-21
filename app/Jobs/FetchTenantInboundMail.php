@@ -1,0 +1,317 @@
+<?php
+
+namespace App\Jobs;
+
+use App\Models\Clients;
+use App\Models\Companies;
+use App\Models\EmailCampaignLog;
+use App\Models\InboundEmail;
+use App\Models\Leads;
+use App\Models\Messages;
+use Illuminate\Support\Str;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
+
+class FetchTenantInboundMail implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $timeout = 180;
+    public int $tries   = 1;
+
+    public function __construct(public readonly int $companyId) {}
+
+    public function handle(): void
+    {
+        if (! function_exists('imap_open')) {
+            Log::warning('ext-imap is not installed; skipping inbound fetch.');
+            return;
+        }
+
+        $company = Companies::find($this->companyId);
+        if (! $company || $company->mail_provision_status !== 'ready') {
+            return;
+        }
+
+        $host = (string) config('services.mailcow.imap_host');
+        $port = (int)    config('services.mailcow.imap_port', 993);
+        $parent = (string) config('services.mail_tenant.parent_domain');
+        $fqdn   = "{$company->mail_subdomain}.{$parent}";
+        $user   = "{$company->mail_inbox_local_part}@{$fqdn}";
+        $pass   = Crypt::decryptString($company->mail_inbox_password);
+
+        $mailbox = "{{$host}:{$port}/imap/ssl}INBOX";
+        $inbox   = @imap_open($mailbox, $user, $pass, 0, 1);
+
+        if (! $inbox) {
+            throw new RuntimeException("IMAP login failed for {$user}: " . imap_last_error());
+        }
+
+        try {
+            $uids = imap_search($inbox, 'UNSEEN', SE_UID) ?: [];
+
+            foreach ($uids as $uid) {
+                try {
+                    $this->ingest($company, $inbox, (int) $uid, $fqdn);
+                    imap_setflag_full($inbox, (string) $uid, '\\Seen', ST_UID);
+                } catch (\Throwable $e) {
+                    Log::error("Inbound ingest failed for company #{$company->id} uid {$uid}", [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            $company->update(['mail_last_inbound_fetch_at' => now()]);
+        } finally {
+            imap_close($inbox);
+        }
+    }
+
+    private function ingest(Companies $company, $inbox, int $uid, string $fqdn): void
+    {
+        $headerRaw = imap_fetchheader($inbox, $uid, FT_UID);
+        $headers   = imap_rfc822_parse_headers($headerRaw);
+
+        $to = $this->addressFromList($headers->to ?? []);
+        if (! $to || ! str_ends_with(strtolower($to), '@' . strtolower($fqdn)) && ! $this->deliveredToMatches($headerRaw, $fqdn)) {
+            $toFromDelivered = $this->extractDeliveredTo($headerRaw, $fqdn);
+            if ($toFromDelivered) {
+                $to = $toFromDelivered;
+            }
+        }
+
+        $alias = $to ? strtolower(strtok($to, '@')) : 'catchall';
+
+        $from     = $this->addressFromList($headers->from ?? []);
+        $fromName = isset($headers->from[0]->personal) ? (string) $headers->from[0]->personal : null;
+        $subject  = isset($headers->subject) ? $this->decode($headers->subject) : null;
+        $msgId    = isset($headers->message_id) ? trim($headers->message_id, '<>') : null;
+        $inReply  = isset($headers->in_reply_to) ? trim($headers->in_reply_to, '<>') : null;
+        $received = isset($headers->date) ? date('Y-m-d H:i:s', strtotime($headers->date)) : now();
+
+        if ($msgId && InboundEmail::where('message_id', $msgId)->exists()) {
+            return;
+        }
+
+        [$text, $html] = $this->extractBodies($inbox, $uid);
+
+        $email = InboundEmail::create([
+            'company_id'   => $company->id,
+            'alias'        => $this->aliasBucket($alias),
+            'to_address'   => $to,
+            'from_address' => $from,
+            'from_name'    => $fromName,
+            'subject'      => $subject,
+            'message_id'   => $msgId,
+            'in_reply_to'  => $inReply,
+            'body_text'    => $text,
+            'body_html'    => $html,
+            'headers'      => $this->headersToArray($headers),
+            'received_at'  => $received,
+        ]);
+
+        $this->route($company, $email);
+    }
+
+    private function route(Companies $company, InboundEmail $email): void
+    {
+        try {
+            if ($email->alias === 'bounce') {
+                EmailCampaignLog::whereHas('campaign', fn ($q) => $q->where('company_id', $company->id))
+                    ->where('email_address', $email->from_address)
+                    ->latest()
+                    ->first()
+                    ?->update(['status' => 'failed', 'error_message' => 'Bounce: ' . ($email->subject ?? '')]);
+
+                $email->update(['status' => 'processed']);
+                return;
+            }
+
+            // For commercial@, campaign@, catchall@ — link reply to the originating lead
+            $lead = $this->resolveLeadFromEmail($company, $email);
+
+            if ($lead) {
+                $rawBody = $email->body_text ?? strip_tags($email->body_html ?? '');
+                $content = $this->stripQuotedContent($rawBody);
+
+                Messages::create([
+                    'message_id' => $email->message_id ?? 'inbound-' . Str::uuid(),
+                    'message_to' => $lead->client?->email ?? $email->from_address,
+                    'lead_id'    => $lead->id,
+                    'sender_id'  => null,
+                    'client_id'  => $lead->client_id,
+                    'channel'    => 'email',
+                    'direction'  => 'inbound',
+                    'content'    => $content ?: $rawBody,
+                ]);
+            }
+
+            $email->update(['status' => 'processed']);
+        } catch (\Throwable $e) {
+            $email->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
+        }
+    }
+
+    private function resolveLeadFromEmail(Companies $company, InboundEmail $email): ?Leads
+    {
+        // 1. Try to find lead by reference in subject (e.g. "Re: Lead #LD-3-XXXX")
+        if ($email->subject && preg_match('/#(LD-\d+-[A-Z0-9]+)/', $email->subject, $matches)) {
+            $lead = Leads::where('company_id', $company->id)
+                ->where('reference', $matches[1])
+                ->first();
+            if ($lead) {
+                return $lead;
+            }
+        }
+
+        // 2. Find or create client by from_address
+        $client = Clients::where('company_id', $company->id)
+            ->where('email', $email->from_address)
+            ->first();
+
+        if (! $client) {
+            $clientName = $email->from_name ?: explode('@', $email->from_address)[0];
+            $client = Clients::create([
+                'company_id' => $company->id,
+                'name'       => $clientName,
+                'email'      => $email->from_address,
+            ]);
+        }
+
+        // 3. Find open lead or create a new one
+        $lead = Leads::where('company_id', $company->id)
+            ->where('client_id', $client->id)
+            ->whereNotIn('status', ['won', 'lost'])
+            ->latest()
+            ->first();
+
+        if (! $lead) {
+            $lead = Leads::create([
+                'client_id'  => $client->id,
+                'company_id' => $company->id,
+                'reference'  => 'LD-' . $company->id . '-' . strtoupper(Str::random(8)),
+                'title'      => $email->subject ?: 'Email de ' . $email->from_address,
+                'status'     => 'new',
+                'source'     => 'email',
+            ]);
+        }
+
+        return $lead;
+    }
+
+    private function stripQuotedContent(string $body): string
+    {
+        $lines  = explode("\n", $body);
+        $result = [];
+
+        foreach ($lines as $line) {
+            $trimmed = ltrim($line);
+            // Stop at quoted lines (>) or "On DATE ... wrote:" patterns
+            if (str_starts_with($trimmed, '>')) {
+                break;
+            }
+            if (preg_match('/^(On .+wrote:|.+escreveu.+:)\s*$/i', rtrim($line))) {
+                break;
+            }
+            $result[] = $line;
+        }
+
+        return trim(implode("\n", $result));
+    }
+
+    private function aliasBucket(string $alias): string
+    {
+        $allowed = (array) config('services.mail_tenant.aliases');
+        return in_array($alias, $allowed, true) ? $alias : 'catchall';
+    }
+
+    private function addressFromList(array $list): ?string
+    {
+        if (empty($list)) {
+            return null;
+        }
+        $first = $list[0];
+        return isset($first->mailbox, $first->host) ? "{$first->mailbox}@{$first->host}" : null;
+    }
+
+    private function extractBodies($inbox, int $uid): array
+    {
+        $structure = imap_fetchstructure($inbox, $uid, FT_UID);
+        $text = null;
+        $html = null;
+
+        if (! isset($structure->parts) || empty($structure->parts)) {
+            $body = imap_body($inbox, $uid, FT_UID);
+            $decoded = $this->decodeBody($body, $structure->encoding ?? 0);
+            if (($structure->subtype ?? 'PLAIN') === 'HTML') {
+                $html = $decoded;
+            } else {
+                $text = $decoded;
+            }
+            return [$text, $html];
+        }
+
+        $this->walkParts($inbox, $uid, $structure->parts, '', $text, $html);
+        return [$text, $html];
+    }
+
+    private function walkParts($inbox, int $uid, array $parts, string $prefix, ?string &$text, ?string &$html): void
+    {
+        foreach ($parts as $i => $part) {
+            $section = $prefix === '' ? (string) ($i + 1) : "{$prefix}.".($i + 1);
+            if (! empty($part->parts)) {
+                $this->walkParts($inbox, $uid, $part->parts, $section, $text, $html);
+                continue;
+            }
+
+            $data = imap_fetchbody($inbox, $uid, $section, FT_UID);
+            $decoded = $this->decodeBody($data, $part->encoding ?? 0);
+            $subtype = strtoupper($part->subtype ?? '');
+
+            if ($subtype === 'PLAIN' && $text === null) {
+                $text = $decoded;
+            } elseif ($subtype === 'HTML' && $html === null) {
+                $html = $decoded;
+            }
+        }
+    }
+
+    private function decodeBody(string $data, int $encoding): string
+    {
+        return match ($encoding) {
+            3       => base64_decode($data, true) ?: $data,
+            4       => quoted_printable_decode($data),
+            default => $data,
+        };
+    }
+
+    private function decode(string $value): string
+    {
+        $parts = imap_mime_header_decode($value);
+        return collect($parts)->map(fn ($p) => $p->text)->implode('');
+    }
+
+    private function headersToArray(object $headers): array
+    {
+        return json_decode(json_encode($headers), true) ?? [];
+    }
+
+    private function deliveredToMatches(string $headerRaw, string $fqdn): bool
+    {
+        return (bool) preg_match('/^Delivered-To: .+@' . preg_quote($fqdn, '/') . '/mi', $headerRaw);
+    }
+
+    private function extractDeliveredTo(string $headerRaw, string $fqdn): ?string
+    {
+        if (preg_match('/^Delivered-To: (.+@' . preg_quote($fqdn, '/') . ')/mi', $headerRaw, $m)) {
+            return trim($m[1]);
+        }
+        return null;
+    }
+}

@@ -15,9 +15,15 @@ class EmailCampaign extends Model
 
     protected $casts = [
         'filters'      => 'array',
+        'images'       => 'array',
         'scheduled_at' => 'datetime',
         'sent_at'      => 'datetime',
     ];
+
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(EmailTemplate::class, 'email_template_id');
+    }
 
     public function company(): BelongsTo
     {

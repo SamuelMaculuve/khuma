@@ -197,7 +197,7 @@ class WhatsAppConnection extends Component
             'token' => $this->currentInstance->token,
         ])->post($this->baseUrl . '/webhook', [
             "enabled"=> true,
-            'url' => "https://workflow.mazedeve.com/webhook/50984dd5-358c-473f-a9fe-98d682878db8",
+            'url' => env('N8N_WEBHOOK_ENDPOINT', env('WEBHOOK_ENDPOINT', '')),
             "events"=> [
                 "messages"
             ]

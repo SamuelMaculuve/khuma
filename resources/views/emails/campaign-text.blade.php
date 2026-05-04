@@ -1,6 +1,4 @@
-Olá {{ $clientName }},
-
-{{ $campaign->body_text ?? strip_tags($campaign->body_html) }}
+{{ $campaign->body_text ?? strip_tags($bodyHtml) }}
 
 ---
 Enviado via Khuma CRM

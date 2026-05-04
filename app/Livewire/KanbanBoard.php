@@ -189,15 +189,19 @@ class KanbanBoard extends Component
         ]);
 
         if (array_key_exists($lead->status, $this->states)) {
+            $clientName = $this->creatingNewClient
+                ? ($data['new_client_name'] ?? '')
+                : (Clients::find($clientId)?->name ?? '');
+
             $this->states[$lead->status][] = [
                 'id'          => $lead->id,
                 'client_id'   => $lead->client_id,
+                'client_name' => $clientName,
                 'reference'   => $lead->reference,
                 'title'       => $lead->title,
                 'description' => $lead->description,
                 'status'      => $lead->status,
                 'value'       => $lead->value,
-                'close_date'  => $lead->expected_close_date,
                 'source'      => $lead->source,
                 'time'        => $lead->expected_close_date
                     ? Carbon::parse($lead->expected_close_date)->diffForHumans()
@@ -293,31 +297,27 @@ class KanbanBoard extends Component
 
     public function mount()
     {
-        $leads = Leads::query()->where('company_id', auth()->user()->company_id)->get();
+        $leads = Leads::with('client')
+            ->where('company_id', auth()->user()->company_id)
+            ->get();
 
         foreach ($leads as $lead) {
-
-            // fallback de segurança
             if (! array_key_exists($lead->status, $this->states)) {
                 continue;
             }
 
             $this->states[$lead->status][] = [
-                'id' => $lead->id,
-                'client_id' => $lead->client_id,
-                'reference' => $lead->reference,
-                'title' => $lead->title,
+                'id'          => $lead->id,
+                'client_id'   => $lead->client_id,
+                'client_name' => optional($lead->client)->name,
+                'reference'   => $lead->reference,
+                'title'       => $lead->title,
                 'description' => $lead->description,
-                'status' => $lead->status,
-
-                'value' => $lead->value,
-                'expected_' => $lead->expected_,
-                'close_date' => $lead->close_date,
-                'source' => $lead->source,
-
-                // opcional p/ UI
-                'time' => $lead->close_date
-                    ? Carbon::parse($lead->close_date)->diffForHumans()
+                'status'      => $lead->status,
+                'value'       => $lead->value,
+                'source'      => $lead->source,
+                'time'        => $lead->expected_close_date
+                    ? Carbon::parse($lead->expected_close_date)->diffForHumans()
                     : null,
             ];
         }

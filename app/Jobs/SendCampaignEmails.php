@@ -61,7 +61,7 @@ class SendCampaignEmails implements ShouldQueue
                 ]);
 
                 try {
-                    $mailable = (new CampaignEmail($campaign, $client->name))
+                    $mailable = (new CampaignEmail($campaign, $client, $company?->name ?? ''))
                         ->replyTo(
                             $company?->mail_provision_status === 'ready'
                                 ? 'campaign@' . $company->mail_subdomain . '.' . config('services.mail_tenant.parent_domain')

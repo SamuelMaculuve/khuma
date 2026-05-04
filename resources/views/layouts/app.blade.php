@@ -108,13 +108,6 @@
     {{-- Right: mail status + user menu --}}
     <div class="flex items-center gap-1 ml-auto shrink-0">
 
-        {{-- Mail provisioning dot --}}
-        @php $mailOk = auth()->user()?->company?->mail_provision_status === 'ready'; @endphp
-        <div class="hidden sm:flex items-center gap-1.5 px-2 text-xs text-white/70"
-             title="{{ $mailOk ? 'Email activo' : 'Email pendente' }}">
-            <span class="w-2 h-2 rounded-full {{ $mailOk ? 'bg-green-400' : 'bg-yellow-400' }}"></span>
-            <span>{{ auth()->user()?->company?->name }}</span>
-        </div>
 
         <div class="w-px h-5 bg-white/20 mx-1"></div>
 

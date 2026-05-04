@@ -25,11 +25,8 @@
             <h1>Khuma CRM</h1>
             <p>{{ $campaign->name }}</p>
         </div>
-        <div class="greeting">
-            <p>Olá <strong>{{ $clientName }}</strong>,</p>
-        </div>
         <div class="body">
-            {!! $campaign->body_html !!}
+            {!! $bodyHtml !!}
         </div>
         <div class="footer">
             <p>Enviado via Khuma CRM &middot; Campanha: {{ $campaign->name }}</p>

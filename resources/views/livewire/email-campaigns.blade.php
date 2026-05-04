@@ -15,16 +15,14 @@
         </button>
     </div>
 
-    {{-- Flash messages --}}
+    {{-- Flash --}}
     @if(session('success'))
         <div class="mb-4 flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
             {{ session('success') }}
         </div>
     @endif
     @if(session('error'))
         <div class="mb-4 flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
             {{ session('error') }}
         </div>
     @endif
@@ -88,25 +86,11 @@
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 @if($campaign->status === 'draft')
-                                    <button
-                                        wire:click="openEdit({{ $campaign->id }})"
-                                        class="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-                                    >Editar</button>
-                                    <button
-                                        wire:click="send({{ $campaign->id }})"
-                                        wire:confirm="Tem a certeza que quer enviar esta campanha? Esta acção não pode ser desfeita."
-                                        class="text-xs text-green-600 hover:text-green-800 font-medium"
-                                    >Enviar</button>
-                                    <button
-                                        wire:click="delete({{ $campaign->id }})"
-                                        wire:confirm="Eliminar esta campanha?"
-                                        class="text-xs text-red-500 hover:text-red-700 font-medium"
-                                    >Eliminar</button>
+                                    <button wire:click="openEdit({{ $campaign->id }})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Editar</button>
+                                    <button wire:click="send({{ $campaign->id }})" wire:confirm="Tem a certeza? Esta acção não pode ser desfeita." class="text-xs text-green-600 hover:text-green-800 font-medium">Enviar</button>
+                                    <button wire:click="delete({{ $campaign->id }})" wire:confirm="Eliminar?" class="text-xs text-red-500 hover:text-red-700 font-medium">Eliminar</button>
                                 @else
-                                    <button
-                                        wire:click="openStats({{ $campaign->id }})"
-                                        class="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-                                    >Ver Stats</button>
+                                    <button wire:click="openStats({{ $campaign->id }})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Ver Stats</button>
                                 @endif
                             </div>
                         </td>
@@ -130,137 +114,270 @@
         @endif
     </div>
 
-    {{-- Quill CSS + JS --}}
+    {{-- Quill --}}
     @once
         <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
         <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
         <style>
-            .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid #e5e7eb; background: #f9fafb; }
+            .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid #e5e7eb; background: #f9fafb; border-radius: 8px 8px 0 0; }
             .ql-container.ql-snow { border: none; }
-            .ql-editor { min-height: 220px; }
+            .ql-editor { min-height: 360px; font-size: 14px; }
+            .preview-frame { background: #f3f4f6; padding: 16px; border-radius: 8px; }
+            .preview-frame .preview-card { background: #fff; max-width: 600px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
         </style>
     @endonce
 
-    {{-- Create / Edit form slide-over --}}
-    @if($showForm)
-        <div class="fixed inset-0 z-50 flex" x-data>
-            {{-- Backdrop --}}
-            <div class="fixed inset-0 bg-gray-900/50" wire:click="$set('showForm', false)"></div>
-            {{-- Panel --}}
-            <div class="relative ml-auto w-full max-w-2xl bg-white h-full flex flex-col shadow-2xl overflow-y-auto">
-                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900">
-                        {{ $editingId ? 'Editar Campanha' : 'Nova Campanha' }}
-                    </h2>
-                    <button wire:click="$set('showForm', false)" class="text-gray-400 hover:text-gray-600">
+    {{-- Wizard --}}
+    @if($showWizard)
+        <div class="fixed inset-0 z-50 flex" x-data="{}">
+            <div class="fixed inset-0 bg-gray-900/60" wire:click="$set('showWizard', false)"></div>
+            <div class="relative ml-auto w-full max-w-6xl bg-white h-full flex flex-col shadow-2xl">
+
+                {{-- Header + stepper --}}
+                <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">
+                            {{ $editingId ? 'Editar Campanha' : 'Nova Campanha' }}
+                        </h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Passo {{ $step }} de 3</p>
+                    </div>
+                    <div class="hidden md:flex items-center gap-2">
+                        @foreach(['Modelo', 'Conteúdo', 'Audiência'] as $i => $label)
+                            @php $n = $i + 1; @endphp
+                            <div class="flex items-center gap-2">
+                                <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold
+                                    {{ $step >= $n ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500' }}">{{ $n }}</span>
+                                <span class="text-sm {{ $step === $n ? 'text-gray-900 font-medium' : 'text-gray-500' }}">{{ $label }}</span>
+                                @if($n < 3) <span class="w-8 h-px bg-gray-200"></span> @endif
+                            </div>
+                        @endforeach
+                    </div>
+                    <button wire:click="$set('showWizard', false)" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <div class="flex-1 px-6 py-6 space-y-5">
-                    {{-- Name --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome da campanha <span class="text-red-500">*</span></label>
-                        <input type="text" wire:model="name" placeholder="Ex: Promoção de Abril"
-                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                        @error('name') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                    </div>
+                <div class="flex-1 overflow-y-auto">
 
-                    {{-- Subject --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Assunto do email <span class="text-red-500">*</span></label>
-                        <input type="text" wire:model="subject" placeholder="Ex: Oferta especial para si"
-                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                        @error('subject') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                    </div>
+                    {{-- STEP 1 — Template grid --}}
+                    @if($step === 1)
+                        <div class="p-6">
+                            <div class="mb-6 flex items-end justify-between gap-4 flex-wrap">
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900">Escolha um modelo</h3>
+                                    <p class="text-sm text-gray-500 mt-1">Comece a partir de um modelo pré-desenhado ou crie do zero.</p>
+                                </div>
+                                <button wire:click="startBlank" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Começar em branco →</button>
+                            </div>
 
-                    {{-- Body HTML - Quill rich text editor --}}
-                    <div x-data="{
-                        quill: null,
-                        init() {
-                            this.quill = new Quill(this.$refs.editor, {
-                                theme: 'snow',
-                                modules: {
-                                    toolbar: {
-                                        container: [
-                                            [{ header: [1, 2, 3, false] }],
-                                            ['bold', 'italic', 'underline', 'strike'],
-                                            [{ color: [] }, { background: [] }],
-                                            [{ list: 'ordered' }, { list: 'bullet' }],
-                                            [{ align: [] }],
-                                            ['blockquote'],
-                                            ['link', 'image'],
-                                            ['clean']
-                                        ],
-                                        handlers: {
-                                            image: () => {
-                                                const input = document.createElement('input');
-                                                input.setAttribute('type', 'file');
-                                                input.setAttribute('accept', 'image/*');
-                                                input.click();
-                                                input.onchange = () => {
-                                                    const file = input.files[0];
-                                                    if (!file) return;
-                                                    const reader = new FileReader();
-                                                    reader.onload = (e) => {
-                                                        const range = this.quill.getSelection(true);
-                                                        this.quill.insertEmbed(range.index, 'image', e.target.result);
-                                                        this.quill.setSelection(range.index + 1);
-                                                    };
-                                                    reader.readAsDataURL(file);
-                                                };
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                                @foreach($templates as $tpl)
+                                    <button wire:click="pickTemplate({{ $tpl->id }})"
+                                            class="group text-left bg-white rounded-xl border border-gray-200 hover:border-indigo-400 hover:shadow-md transition-all overflow-hidden">
+                                        <div class="aspect-[4/3] bg-gray-50 border-b border-gray-100 overflow-hidden p-4 flex items-center justify-center">
+                                            <div class="prose prose-sm max-w-full text-[10px] leading-tight scale-[0.55] origin-center">
+                                                {!! \Illuminate\Support\Str::limit(strip_tags($tpl->body_html, '<p><h1><h2><h3><strong><em><br>'), 500) !!}
+                                            </div>
+                                        </div>
+                                        <div class="p-4">
+                                            <div class="flex items-center justify-between">
+                                                <h4 class="text-sm font-semibold text-gray-900 group-hover:text-indigo-600">{{ $tpl->name }}</h4>
+                                                <span class="text-[10px] uppercase tracking-wider text-gray-400">{{ $tpl->category }}</span>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-1 truncate">{{ $tpl->subject }}</p>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- STEP 2 — Content (editor + preview + image manager) --}}
+                    @if($step === 2)
+                        <div class="grid grid-cols-1 lg:grid-cols-5 gap-0 h-full">
+                            {{-- Left: editor + meta --}}
+                            <div class="lg:col-span-3 p-6 border-r border-gray-200 space-y-5 overflow-y-auto">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome da campanha <span class="text-red-500">*</span></label>
+                                    <input type="text" wire:model="name" placeholder="Ex: Promoção de Maio"
+                                           class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    @error('name') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Assunto <span class="text-red-500">*</span></label>
+                                    <input type="text" wire:model="subject" placeholder="Assunto do email"
+                                           class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    @error('subject') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                </div>
+
+                                {{-- Image manager (placeholder slots from template) --}}
+                                @if(!empty($images))
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Imagens do modelo</label>
+                                        <div class="space-y-2">
+                                            @foreach($images as $key => $url)
+                                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                                    <div class="w-16 h-12 bg-white rounded border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                        @if($url)
+                                                            <img src="{{ $url }}" alt="" class="w-full h-full object-cover" />
+                                                        @else
+                                                            <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-sm font-medium text-gray-700">{{ ucfirst(str_replace('_', ' ', $key)) }}</p>
+                                                        <p class="text-xs text-gray-400 truncate">{{ $url ?: 'Sem imagem — clique para adicionar' }}</p>
+                                                    </div>
+                                                    <button type="button" wire:click="selectPlaceholderForUpload('{{ $key }}')" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">{{ $url ? 'Trocar' : 'Adicionar' }}</button>
+                                                    @if($url)
+                                                        <button type="button" wire:click="clearPlaceholderImage('{{ $key }}')" class="text-xs text-red-500 hover:text-red-700">Remover</button>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- Editor --}}
+                                <div x-data="{
+                                    quill: null,
+                                    pendingImageUrl: null,
+                                    init() {
+                                        this.quill = new Quill(this.$refs.editor, {
+                                            theme: 'snow',
+                                            modules: {
+                                                toolbar: {
+                                                    container: [
+                                                        [{ header: [1, 2, 3, false] }],
+                                                        ['bold', 'italic', 'underline', 'strike'],
+                                                        [{ color: [] }, { background: [] }],
+                                                        [{ list: 'ordered' }, { list: 'bullet' }],
+                                                        [{ align: [] }],
+                                                        ['blockquote', 'link', 'image'],
+                                                        ['clean']
+                                                    ],
+                                                    handlers: {
+                                                        image: () => {
+                                                            $wire.set('uploadingPlaceholder', null);
+                                                            this.$refs.fileInput.click();
+                                                        }
+                                                    }
+                                                }
                                             }
-                                        }
+                                        });
+
+                                        const initial = @js($bodyHtml);
+                                        if (initial) this.quill.root.innerHTML = initial;
+
+                                        this.quill.on('text-change', () => {
+                                            $wire.set('bodyHtml', this.quill.root.innerHTML, false);
+                                        });
+
+                                        $wire.on('quill-set-content', (e) => {
+                                            const html = (e && e.html) || (Array.isArray(e) ? e[0]?.html : '') || '';
+                                            this.quill.root.innerHTML = html;
+                                        });
+
+                                        $wire.on('quill-insert-image', (e) => {
+                                            const url = (e && e.url) || (Array.isArray(e) ? e[0]?.url : '');
+                                            if (!url) return;
+                                            const range = this.quill.getSelection(true);
+                                            this.quill.insertEmbed(range.index, 'image', url);
+                                            this.quill.setSelection(range.index + 1);
+                                        });
+
+                                        $wire.on('trigger-image-upload', () => {
+                                            this.$refs.fileInput.click();
+                                        });
                                     }
-                                }
-                            });
+                                }">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Corpo do email <span class="text-red-500">*</span></label>
+                                    <p class="text-xs text-gray-500 mb-2">Use <code class="bg-gray-100 px-1 rounded">@{{name}}</code>, <code class="bg-gray-100 px-1 rounded">@{{email}}</code>, <code class="bg-gray-100 px-1 rounded">@{{company_name}}</code> para personalizar.</p>
+                                    <div class="rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+                                        <div x-ref="editor"></div>
+                                    </div>
+                                    <input type="file" x-ref="fileInput" wire:model="imageUpload" accept="image/*" class="hidden" />
+                                    @error('bodyHtml') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                    @error('imageUpload') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                    <div wire:loading wire:target="imageUpload" class="text-xs text-indigo-600 mt-2">A enviar imagem…</div>
+                                </div>
+                            </div>
 
-                            const initial = @js($bodyHtml);
-                            if (initial) this.quill.root.innerHTML = initial;
-
-                            this.quill.on('text-change', () => {
-                                $wire.set('bodyHtml', this.quill.root.innerHTML);
-                            });
-
-                            // Sync when form opens with existing content (edit mode)
-                            $wire.on('quill-set-content', (html) => {
-                                this.quill.root.innerHTML = html || '';
-                            });
-                        }
-                    }">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Corpo do email <span class="text-red-500">*</span>
-                        </label>
-                        <div class="rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
-                            <div x-ref="editor" style="min-height: 220px; font-size: 14px;"></div>
+                            {{-- Right: live preview --}}
+                            <div class="lg:col-span-2 bg-gray-50 p-6 overflow-y-auto">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h4 class="text-sm font-semibold text-gray-700">Pré-visualização</h4>
+                                    <span class="text-[10px] text-gray-400 uppercase tracking-wider">amostra</span>
+                                </div>
+                                <div class="preview-frame">
+                                    <div class="preview-card">
+                                        <div style="background:#4f46e5;padding:24px;color:#fff">
+                                            <div style="font-weight:700;font-size:18px">{{ auth()->user()->company?->name ?? 'A sua empresa' }}</div>
+                                            <div style="font-size:12px;color:#c7d2fe;margin-top:2px">{{ $subject ?: 'Assunto do email' }}</div>
+                                        </div>
+                                        <div style="padding:24px;color:#374151;font-size:14px;line-height:1.65">
+                                            {!! $this->previewHtml !!}
+                                        </div>
+                                        <div style="background:#f9fafb;padding:14px 24px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af">
+                                            Enviado via Khuma CRM
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        @error('bodyHtml') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
-                    </div>
+                    @endif
 
-                    {{-- Lead status filters --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar audiência por estado do lead <span class="text-gray-400 text-xs">(deixar vazio = todos os clientes com email)</span></label>
-                        <div class="grid grid-cols-2 gap-2">
-                            @foreach(['new' => 'Novo', 'contacted' => 'Contactado', 'qualified' => 'Qualificado', 'proposal' => 'Proposta', 'negotiation' => 'Negociação', 'won' => 'Ganho', 'lost' => 'Perdido'] as $value => $label)
-                                <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                                    <input type="checkbox" wire:model="filters.lead_status" value="{{ $value }}"
-                                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-                                    {{ $label }}
-                                </label>
-                            @endforeach
+                    {{-- STEP 3 — Audience --}}
+                    @if($step === 3)
+                        <div class="p-6 max-w-3xl mx-auto space-y-6">
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-900">Audiência</h3>
+                                <p class="text-sm text-gray-500 mt-1">Escolha quem vai receber esta campanha.</p>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                                <p class="text-sm font-medium text-gray-700 mb-3">Filtrar por estado do lead</p>
+                                <p class="text-xs text-gray-500 mb-3">Deixe vazio para enviar a todos os clientes com email.</p>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    @foreach(['new' => 'Novo', 'contacted' => 'Contactado', 'qualified' => 'Qualificado', 'proposal' => 'Proposta', 'negotiation' => 'Negociação', 'won' => 'Ganho', 'lost' => 'Perdido'] as $value => $label)
+                                        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer p-2 rounded hover:bg-white">
+                                            <input type="checkbox" wire:model.live="filters.lead_status" value="{{ $value }}"
+                                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                            {{ $label }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+                                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <div>
+                                    <p class="text-sm font-semibold text-indigo-900">{{ $this->recipientCount }} destinatário(s) correspondem</p>
+                                    <p class="text-xs text-indigo-700">Clientes com email válido na sua empresa.</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
 
-                <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-                    <button wire:click="$set('showForm', false)"
-                            class="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancelar
-                    </button>
-                    <button wire:click="save"
-                            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
-                        Guardar rascunho
-                    </button>
+                {{-- Footer actions --}}
+                <div class="px-6 py-4 border-t border-gray-200 bg-white flex items-center justify-between">
+                    <div>
+                        @if($step > 1)
+                            <button wire:click="prevStep" class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">← Voltar</button>
+                        @endif
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button wire:click="$set('showWizard', false)" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Cancelar</button>
+                        @if($step < 3)
+                            @if($step >= 2)
+                                <button wire:click="save" class="px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Guardar rascunho</button>
+                            @endif
+                            <button wire:click="nextStep" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Continuar →</button>
+                        @else
+                            <button wire:click="save" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Guardar rascunho</button>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
@@ -277,9 +394,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-
                 <div class="px-6 py-5 space-y-5 overflow-y-auto">
-                    {{-- Summary cards --}}
                     <div class="grid grid-cols-3 gap-4">
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <p class="text-2xl font-bold text-gray-900">{{ $statsData->recipients_count }}</p>
@@ -294,8 +409,6 @@
                             <p class="text-xs text-gray-500 mt-1">Falhas</p>
                         </div>
                     </div>
-
-                    {{-- Progress bar --}}
                     @if($statsData->recipients_count > 0)
                         @php $pct = round(($statsData->sent_count / $statsData->recipients_count) * 100); @endphp
                         <div>
@@ -307,8 +420,6 @@
                             </div>
                         </div>
                     @endif
-
-                    {{-- Logs table --}}
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm divide-y divide-gray-100">
                             <thead>

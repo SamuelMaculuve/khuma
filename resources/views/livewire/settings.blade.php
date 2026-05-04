@@ -69,113 +69,81 @@
     @if($tab === 'mail')
         <div class="space-y-4">
 
-            {{-- Status card --}}
+            @if(session('success_mail'))
+                <div class="flex items-center gap-2 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
+                    {{ session('success_mail') }}
+                </div>
+            @endif
+
+            {{-- Email integration status --}}
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div class="flex items-start justify-between">
+                <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h2 class="font-semibold text-gray-900">Estado do Servidor de Email</h2>
-                        <p class="text-sm text-gray-500 mt-1">Cada empresa tem o seu subdomínio de email dedicado.</p>
+                        <h2 class="font-semibold text-gray-900">Integração de Email</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">O seu endereço de email dedicado para leads e campanhas.</p>
                     </div>
                     @php
-                        $statusMap = [
-                            'ready'        => ['bg-emerald-100 text-emerald-800', 'Activo'],
-                            'provisioning' => ['bg-amber-100 text-amber-800', 'A configurar...'],
-                            'failed'       => ['bg-red-100 text-red-800', 'Falhou'],
-                            'pending'      => ['bg-gray-100 text-gray-700', 'Pendente'],
-                        ];
-                        [$badgeClass, $badgeLabel] = $statusMap[$mailStatus] ?? $statusMap['pending'];
+                        $isReady = $mailStatus === 'ready';
+                        $isPending = in_array($mailStatus, ['pending', 'provisioning']);
                     @endphp
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $badgeClass }}">
-                        {{ $badgeLabel }}
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
+                        {{ $isReady ? 'bg-emerald-100 text-emerald-800' : ($isPending ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800') }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $isReady ? 'bg-emerald-500' : ($isPending ? 'bg-amber-500' : 'bg-red-500') }}"></span>
+                        {{ $isReady ? 'Activo' : ($isPending ? 'A configurar...' : 'Inactivo') }}
                     </span>
                 </div>
 
-                @if($company?->mail_subdomain)
-                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        @php
-                            $parent  = config('services.mail_tenant.parent_domain');
-                            $fqdn    = $company->mail_subdomain . '.' . $parent;
-                            $aliases = ['catchall' => '@', 'bounce' => 'bounce@', 'commercial' => 'commercial@', 'campaign' => 'campaign@'];
-                        @endphp
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 mb-2">Subdomínio</p>
-                            <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg">
-                                <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
-                                <code class="text-sm font-mono text-gray-800">{{ $fqdn }}</code>
+                @if($isReady && $company?->mail_subdomain)
+                    @php
+                        $parent = config('services.mail_tenant.parent_domain');
+                        $fqdn   = $company->mail_subdomain . '.' . $parent;
+                        $emailUses = [
+                            ['address' => 'commercial@' . $fqdn, 'label' => 'Leads & CRM',      'icon' => 'fa-handshake',  'color' => 'bg-blue-100 text-blue-600'],
+                            ['address' => 'campaign@'   . $fqdn, 'label' => 'Email Marketing',  'icon' => 'fa-bullhorn',   'color' => 'bg-purple-100 text-purple-600'],
+                            ['address' => 'bounce@'     . $fqdn, 'label' => 'Devoluções',       'icon' => 'fa-rotate-left','color' => 'bg-red-100 text-red-600'],
+                        ];
+                    @endphp
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        @foreach($emailUses as $eu)
+                            <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
+                                <div class="w-8 h-8 {{ $eu['color'] }} rounded-lg flex items-center justify-center shrink-0">
+                                    <i class="fa-solid {{ $eu['icon'] }} text-xs"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-medium text-gray-500">{{ $eu['label'] }}</p>
+                                    <p class="text-xs text-gray-800 font-mono truncate mt-0.5">{{ $eu['address'] }}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 mb-2">Aliases activos</p>
-                            <div class="space-y-1">
-                                @foreach($aliases as $name => $prefix)
-                                    <div class="flex items-center gap-2 text-xs text-gray-600">
-                                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></div>
-                                        <code>{{ $prefix }}{{ $fqdn }}</code>
-                                        <span class="text-gray-400">({{ $name }})</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
+                        @endforeach
+                    </div>
+                    <p class="text-xs text-gray-400 mt-3">
+                        Os seus clientes podem responder directamente a estes endereços. As respostas aparecem automaticamente nos leads correspondentes.
+                    </p>
+                @elseif($isPending)
+                    <div class="flex items-center gap-3 p-4 bg-amber-50 rounded-xl">
+                        <i class="fa-solid fa-circle-notch fa-spin text-amber-500"></i>
+                        <p class="text-sm text-amber-700">A configurar o seu email dedicado. Isto pode demorar alguns minutos.</p>
+                    </div>
+                @else
+                    <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                        <i class="fa-solid fa-envelope text-gray-400"></i>
+                        <p class="text-sm text-gray-600">O email dedicado ainda não foi activado. Clique em "Activar email" para começar.</p>
                     </div>
                 @endif
 
-                @if($company?->mail_provision_error)
-                    <div class="mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
-                        <strong>Erro:</strong> {{ $company->mail_provision_error }}
+                @if(!$isReady)
+                    <div class="mt-4">
+                        <button wire:click="reprovisionMail" wire:loading.attr="disabled"
+                                class="px-4 py-2 bg-[#2c6fad] text-white text-sm font-medium rounded-xl hover:bg-[#1f5fa3] transition-colors disabled:opacity-50">
+                            <span wire:loading.remove wire:target="reprovisionMail">
+                                <i class="fa-solid fa-envelope mr-1.5"></i> Activar email
+                            </span>
+                            <span wire:loading wire:target="reprovisionMail">A activar...</span>
+                        </button>
                     </div>
                 @endif
-
-                @if(session('success_mail'))
-                    <div class="mt-4 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700">
-                        {{ session('success_mail') }}
-                    </div>
-                @endif
-
-                <div class="mt-5 flex gap-3">
-                    <button wire:click="reprovisionMail" wire:loading.attr="disabled"
-                            class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50">
-                        <span wire:loading.remove wire:target="reprovisionMail">
-                            {{ $mailStatus === 'ready' ? 'Reprovisionar' : 'Configurar email' }}
-                        </span>
-                        <span wire:loading wire:target="reprovisionMail">A iniciar...</span>
-                    </button>
-                </div>
             </div>
 
-            {{-- Mailcow connection test --}}
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <h2 class="font-semibold text-gray-900 mb-1">Ligação ao Mailcow</h2>
-                <p class="text-sm text-gray-500 mb-4">Verifique a ligação ao servidor Mailcow da sua organização.</p>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">URL do Mailcow</label>
-                        <input type="url" wire:model="mailcowUrl"
-                               placeholder="https://mail.seudominio.com"
-                               class="w-full rounded-xl border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">API Key</label>
-                        <input type="password" wire:model="mailcowKey"
-                               placeholder="••••••••••••"
-                               class="w-full rounded-xl border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
-                </div>
-
-                @if($mailTestResult)
-                    @php [$type, $msg] = explode(':', $mailTestResult, 2); @endphp
-                    <div class="mb-4 px-4 py-3 rounded-xl text-sm
-                         {{ $type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-red-50 border border-red-200 text-red-700' }}">
-                        {{ $msg }}
-                    </div>
-                @endif
-
-                <button wire:click="testMailConnection" wire:loading.attr="disabled"
-                        class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50">
-                    <span wire:loading.remove wire:target="testMailConnection">Testar ligação</span>
-                    <span wire:loading wire:target="testMailConnection">A testar...</span>
-                </button>
-            </div>
         </div>
     @endif
 

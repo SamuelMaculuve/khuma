@@ -22,7 +22,7 @@ class Leads extends Model
 
     public function messages(): HasMany
     {
-        return $this->hasMany(Messages::class);
+        return $this->hasMany(Messages::class, 'lead_id');
     }
 
     public function notes(): HasMany
@@ -38,6 +38,11 @@ class Leads extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Companies::class);
+    }
+
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
     }
 
     public function user(): BelongsTo

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\LeadDirectEmail;
 use App\Models\Companies;
+use App\Models\Leads;
 use App\Support\TenantMailer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -60,9 +61,11 @@ class SendLeadEmail implements ShouldQueue
         );
 
         $company = $this->companyId ? Companies::find($this->companyId) : null;
+        $lead = $this->leadId ? Leads::with('team')->find($this->leadId) : null;
+        $alias = $lead?->team?->email_alias ?: 'commercial';
 
         $mailer = ($company && $company->mail_provision_status === 'ready')
-            ? TenantMailer::for($company, 'commercial')
+            ? TenantMailer::for($company, $alias)
             : Mail::mailer();
 
         $mailer->to($this->toEmail)->send($mailable);

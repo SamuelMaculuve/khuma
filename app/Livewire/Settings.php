@@ -110,11 +110,19 @@ class Settings extends Component
         $company = auth()->user()->company;
         if (! $company) return;
 
-        $company->update(['mail_provision_status' => 'pending', 'mail_provision_error' => null]);
+        $company->update(['mail_provision_status' => 'provisioning', 'mail_provision_error' => null]);
         \App\Jobs\ProvisionTenantMailDomain::dispatch($company->id);
 
-        session()->flash('success_mail', 'Provisionamento de email iniciado. Aguarde alguns segundos.');
+        session()->flash('success_mail', 'Provisionamento de email iniciado. Esta página será atualizada automaticamente.');
         $this->mailStatus = 'provisioning';
+    }
+
+    public function refreshMailStatus(): void
+    {
+        $company = auth()->user()->company?->fresh();
+
+        $this->mailStatus = $company?->mail_provision_status ?? 'pending';
+        $this->mailSubdomain = $company?->mail_subdomain ?? '';
     }
 
     // ── TEAMS ────────────────────────────────────────────────────
@@ -207,7 +215,11 @@ class Settings extends Component
             ->orderBy('name')
             ->get();
 
-        return view('livewire.settings', compact('company', 'teams'));
+        return view('livewire.settings', [
+            'company' => $company,
+            'teams' => $teams,
+            'mailDiagnostics' => $this->mailDiagnostics(),
+        ]);
     }
 
     private function resetTeamForm(): void
@@ -227,5 +239,17 @@ class Settings extends Component
             ->orderBy('name')
             ->get(['id', 'name', 'email'])
             ->toArray();
+    }
+
+    private function mailDiagnostics(): array
+    {
+        return [
+            ['label' => 'Mailcow API URL', 'ok' => filled(config('services.mailcow.url'))],
+            ['label' => 'Mailcow API Key', 'ok' => filled(config('services.mailcow.api_key'))],
+            ['label' => 'Cloudflare API Token', 'ok' => filled(config('services.cloudflare.api_token'))],
+            ['label' => 'Cloudflare Zone ID', 'ok' => filled(config('services.cloudflare.zone_id'))],
+            ['label' => 'Domínio principal', 'ok' => filled(config('services.mail_tenant.parent_domain'))],
+            ['label' => 'Servidor SMTP', 'ok' => filled(config('services.mail_tenant.mail_host'))],
+        ];
     }
 }

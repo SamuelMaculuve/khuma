@@ -44,8 +44,8 @@ class TenantMailer
         $manager->purge($key);
 
         $mailer = $manager->mailer($key);
-        // Send FROM the inbox (SMTP owner), Reply-To the alias so replies land in the right place
-        $mailer->alwaysFrom($username, $company->name);
+        // Authenticate with the shared inbox, but present the tenant alias to recipients.
+        $mailer->alwaysFrom($from, $company->name);
         $mailer->alwaysReplyTo($from, $company->name);
 
         return $mailer;

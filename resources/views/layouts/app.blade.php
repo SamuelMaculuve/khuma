@@ -19,7 +19,7 @@
     @livewireStyles
 
     <style>
-        html, body { font-family: 'Inter', sans-serif; background: #f5f5f5; }
+        html, body { font-family: 'Inter', sans-serif; background: #f8fafc; }
         [x-cloak] { display: none !important; }
     </style>
 </head>
@@ -56,7 +56,7 @@
                     ['label'=>'Email',       'route'=>'email-campaigns.index','icon'=>'fa-envelope',     'bg'=>'bg-purple-100', 'ic'=>'text-purple-600'],
                     ['label'=>'WhatsApp',    'route'=>'instance.create',      'icon'=>'fa-comments',     'bg'=>'bg-green-100',  'ic'=>'text-green-600'],
                     ['label'=>'Configurações','route'=>'settings.index',      'icon'=>'fa-gear',         'bg'=>'bg-slate-100',  'ic'=>'text-slate-600'],
-                    ['label'=>'Subscrição',  'route'=>'subscription.plans',   'icon'=>'fa-credit-card',  'bg'=>'bg-amber-100',  'ic'=>'text-amber-600'],
+                    ['label'=>'Subscrição',  'route'=>'subscription.dashboard','icon'=>'fa-credit-card',  'bg'=>'bg-amber-100',  'ic'=>'text-amber-600'],
                 ]; @endphp
                 @foreach($modules as $m)
                 <a href="{{ route($m['route']) }}" @click="open=false"
@@ -86,6 +86,7 @@
             ['label'=>'CRM',             'route'=>'leads.all',             'match'=>['leads.*','lead.*']],
             ['label'=>'Email Marketing', 'route'=>'email-campaigns.index', 'match'=>['email-campaigns.*']],
             ['label'=>'WhatsApp',        'route'=>'instance.create',       'match'=>['instance.*']],
+            ['label'=>'Subscrição',      'route'=>'subscription.dashboard', 'match'=>['subscription.*']],
         ];
         @endphp
         @foreach($navItems as $item)
@@ -101,6 +102,11 @@
            class="px-3 h-9 flex items-center text-sm font-medium rounded whitespace-nowrap transition
                   {{ request()->routeIs('users.*') ? 'bg-black/25 text-white' : 'text-white/80 hover:bg-black/15 hover:text-white' }}">
             Utilizadores
+        </a>
+        <a href="{{ route('admin.plans') }}"
+           class="px-3 h-9 flex items-center text-sm font-medium rounded whitespace-nowrap transition
+                  {{ request()->routeIs('admin.plans') ? 'bg-black/25 text-white' : 'text-white/80 hover:bg-black/15 hover:text-white' }}">
+            Planos
         </a>
         @endrole
     </div>
@@ -146,9 +152,13 @@
                    class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                     <i class="fa-solid fa-gear w-4 text-gray-400"></i> Configurações
                 </a>
+                <a href="{{ route('subscription.dashboard') }}"
+                   class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                    <i class="fa-solid fa-credit-card w-4 text-gray-400"></i> Minha subscrição
+                </a>
                 <a href="{{ route('subscription.plans') }}"
                    class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <i class="fa-solid fa-credit-card w-4 text-gray-400"></i> Subscrição
+                    <i class="fa-solid fa-layer-group w-4 text-gray-400"></i> Planos
                 </a>
                 <div class="border-t border-gray-100 my-1"></div>
                 <form method="POST" action="{{ route('logout') }}">
@@ -166,7 +176,7 @@
 {{-- ═══════════════════════════════════════════════════════
      PAGE CONTENT
 ═══════════════════════════════════════════════════════ --}}
-<main class="min-h-[calc(100vh-44px)]">
+<main class="min-h-[calc(100vh-44px)] bg-slate-50">
     {{ $slot }}
 </main>
 

@@ -17,31 +17,55 @@ class Confirm extends Component
     public bool $loading = false;
 
     protected $rules = [
-        'phone' => 'required|regex:/^84|85\d{7}$/'
+        'phone' => 'required|string|digits:9|starts_with:84,85'
     ];
+
+    public function mount(Plan $plan)
+    {
+        $this->plan = $plan;
+        $this->phone = Auth::user()->phone ?? '';
+    }
 
     public function pay(MpesaService $mpesa)
     {
         $this->validate();
         $this->loading = true;
 
-        $subscription = Subscription::create([
-            'user_id' => Auth::id(),
-            'plan_id' => $this->plan->id,
-            'price' => $this->plan->currentPrice()->amount,
-            'status' => 'pending',
-            'start_date' => now(),
-            'end_date' => now()->addMonth(),
-        ]);
+        $price = $this->plan->currentPrice();
 
-        $response = $mpesa->requestPayment($this->phone, $subscription->price);
+        if (!$price) {
+            $this->addError('phone', 'Este plano ainda não tem preço ativo.');
+            $this->loading = false;
+
+            return null;
+        }
+
+        $user = Auth::user();
+        $subscriptionKey = $user->company_id
+            ? ['company_id' => $user->company_id]
+            : ['user_id' => $user->id];
+
+        $subscription = Subscription::updateOrCreate(
+            $subscriptionKey,
+            [
+                'user_id' => $user->id,
+                'company_id' => $user->company_id,
+                'plan_id' => $this->plan->id,
+                'status' => 'pending',
+                'started_at' => now(),
+                'renews_at' => now()->addMonth(),
+            ]
+        );
+
+        $amount = $price->amount * 1.16;
+        $response = $mpesa->requestPayment($this->phone, $amount);
 
         $payment = Payment::create([
             'user_id' => Auth::id(),
             'subscription_id' => $subscription->id,
             'method' => 'mpesa',
             'phone' => $this->phone,
-            'amount' => $subscription->price,
+            'amount' => $amount,
             'status' => $response['success'] ? 'paid' : 'failed',
             'transaction_reference' => $response['transaction_reference'] ?? null
         ]);

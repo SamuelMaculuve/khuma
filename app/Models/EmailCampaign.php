@@ -20,6 +20,10 @@ class EmailCampaign extends Model
         'sent_at'      => 'datetime',
     ];
 
+    public const REPLY_RECORD_ONLY = 'record_only';
+    public const REPLY_CREATE_IF_NONE = 'create_lead_if_none';
+    public const REPLY_ALWAYS_CREATE = 'always_create_lead';
+
     public function template(): BelongsTo
     {
         return $this->belongsTo(EmailTemplate::class, 'email_template_id');
@@ -33,6 +37,11 @@ class EmailCampaign extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function replyTeam(): BelongsTo
+    {
+        return $this->belongsTo(Team::class, 'reply_team_id');
     }
 
     public function logs(): HasMany

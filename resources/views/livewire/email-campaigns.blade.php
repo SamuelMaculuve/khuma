@@ -47,8 +47,11 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dest.</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Enviados</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Abertos</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Cliques</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Resp.</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Falhas</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criado</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agenda</th>
                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acções</th>
                 </tr>
             </thead>
@@ -81,14 +84,23 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600 text-right">{{ $campaign->recipients_count }}</td>
                         <td class="px-6 py-4 text-sm text-green-600 font-medium text-right">{{ $campaign->sent_count }}</td>
+                        <td class="px-6 py-4 text-sm text-blue-600 font-medium text-right">{{ $campaign->opened_count }}</td>
+                        <td class="px-6 py-4 text-sm text-purple-600 font-medium text-right">{{ $campaign->clicked_count }}</td>
+                        <td class="px-6 py-4 text-sm text-amber-600 font-medium text-right">{{ $campaign->replied_count }}</td>
                         <td class="px-6 py-4 text-sm text-red-500 font-medium text-right">{{ $campaign->failed_count }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-500">{{ $campaign->created_at->format('d/m/Y') }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {{ $campaign->scheduled_at ? $campaign->scheduled_at->timezone($campaign->timezone ?? config('app.timezone'))->format('d/m/Y H:i') : $campaign->created_at->format('d/m/Y') }}
+                        </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 @if($campaign->status === 'draft')
                                     <button wire:click="openEdit({{ $campaign->id }})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Editar</button>
-                                    <button wire:click="send({{ $campaign->id }})" wire:confirm="Tem a certeza? Esta acção não pode ser desfeita." class="text-xs text-green-600 hover:text-green-800 font-medium">Enviar</button>
+                                    <button wire:click="send({{ $campaign->id }})" wire:confirm="Tem a certeza? Esta acção não pode ser desfeita." class="text-xs text-green-600 hover:text-green-800 font-medium">Enviar agora</button>
                                     <button wire:click="delete({{ $campaign->id }})" wire:confirm="Eliminar?" class="text-xs text-red-500 hover:text-red-700 font-medium">Eliminar</button>
+                                @elseif($campaign->status === 'scheduled')
+                                    <button wire:click="send({{ $campaign->id }})" wire:confirm="Enviar esta campanha agora?" class="text-xs text-green-600 hover:text-green-800 font-medium">Enviar agora</button>
+                                    <button wire:click="cancelSchedule({{ $campaign->id }})" wire:confirm="Cancelar o agendamento?" class="text-xs text-red-500 hover:text-red-700 font-medium">Cancelar agenda</button>
+                                    <button wire:click="openStats({{ $campaign->id }})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Ver Stats</button>
                                 @else
                                     <button wire:click="openStats({{ $campaign->id }})" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Ver Stats</button>
                                 @endif
@@ -97,7 +109,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-16 text-center text-gray-400">
+                        <td colspan="11" class="px-6 py-16 text-center text-gray-400">
                             <svg class="mx-auto w-10 h-10 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                             <p class="text-sm font-medium">Nenhuma campanha encontrada</p>
                             <p class="text-xs mt-1">Clique em "Nova Campanha" para começar.</p>
@@ -122,8 +134,14 @@
             .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid #e5e7eb; background: #f9fafb; border-radius: 8px 8px 0 0; }
             .ql-container.ql-snow { border: none; }
             .ql-editor { min-height: 360px; font-size: 14px; }
-            .preview-frame { background: #f3f4f6; padding: 16px; border-radius: 8px; }
-            .preview-frame .preview-card { background: #fff; max-width: 600px; margin: 0 auto; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+            .preview-frame { background: #eef2f7; padding: 16px; border-radius: 8px; }
+            .preview-frame .preview-card { background: #fff; max-width: 640px; margin: 0 auto; border-radius: 0; overflow: hidden; box-shadow: none; border: 1px solid #e2e8f0; }
+            .preview-frame .preview-card img { max-width: 100%; height: auto; display: block; }
+            .preview-frame .preview-card p { margin-bottom: 14px; }
+            .preview-frame .preview-card a { color: #245f95; }
+            .template-email-preview { width: 640px; max-width: 640px; background: #fff; border: 1px solid #e2e8f0; transform: scale(.34); transform-origin: top left; pointer-events: none; }
+            .template-email-preview-body { width: 188px; height: 150px; overflow: hidden; }
+            .template-email-preview img { max-width: 100%; height: auto; display: block; }
         </style>
     @endonce
 
@@ -174,9 +192,17 @@
                                 @foreach($templates as $tpl)
                                     <button wire:click="pickTemplate({{ $tpl->id }})"
                                             class="group text-left bg-white rounded-xl border border-gray-200 hover:border-indigo-400 hover:shadow-md transition-all overflow-hidden">
-                                        <div class="aspect-[4/3] bg-gray-50 border-b border-gray-100 overflow-hidden p-4 flex items-center justify-center">
-                                            <div class="prose prose-sm max-w-full text-[10px] leading-tight scale-[0.55] origin-center">
-                                                {!! \Illuminate\Support\Str::limit(strip_tags($tpl->body_html, '<p><h1><h2><h3><strong><em><br>'), 500) !!}
+                                        <div class="aspect-[4/3] bg-slate-100 border-b border-gray-100 overflow-hidden p-3 flex items-start justify-center">
+                                            <div class="template-email-preview-body">
+                                                <div class="template-email-preview">
+                                                    <div style="padding:22px 28px 14px;border-bottom:3px solid #245f95">
+                                                        <div style="font-size:20px;font-weight:700;color:#0f172a;line-height:1.2;">{{ auth()->user()->company?->name ?? 'A sua empresa' }}</div>
+                                                        <div style="font-size:12px;color:#64748b;margin-top:6px;">{{ $tpl->name }}</div>
+                                                    </div>
+                                                    <div style="padding:28px;color:#273241;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;">
+                                                        {!! $this->templatePreviewHtml($tpl) !!}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="p-4">
@@ -208,6 +234,42 @@
                                     <input type="text" wire:model="subject" placeholder="Assunto do email"
                                            class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                                     @error('subject') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Pré-cabeçalho</label>
+                                    <input type="text" wire:model="preheader" maxlength="180" placeholder="Texto curto que aparece antes de abrir o email"
+                                           class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    @error('preheader') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome do remetente</label>
+                                        <input type="text" wire:model="senderName" placeholder="{{ auth()->user()->company?->name ?? 'A sua empresa' }}"
+                                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                        @error('senderName') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Email do remetente</label>
+                                        <input type="email" wire:model="senderEmail" placeholder="{{ config('mail.from.address') }}"
+                                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                        @error('senderEmail') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Respostas para equipa</label>
+                                        <select wire:model="replyTeamId" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            <option value="">Inbox padrão de campanhas</option>
+                                            @foreach($this->replyTeamOptions as $team)
+                                                <option value="{{ $team->id }}">
+                                                    {{ $team->name }}{{ $team->emailAddress() ? ' · ' . $team->emailAddress() : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('replyTeamId') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                        @if($this->replyTeamOptions->isEmpty())
+                                            <p class="mt-1 text-xs text-gray-500">Crie equipas em Configurações > Equipas para encaminhar respostas.</p>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 {{-- Image manager (placeholder slots from template) --}}
@@ -241,8 +303,16 @@
                                 {{-- Editor --}}
                                 <div x-data="{
                                     quill: null,
-                                    pendingImageUrl: null,
+                                    applyingRemoteContent: false,
                                     init() {
+                                        if (this.$refs.editor.__quill) {
+                                            this.quill = this.$refs.editor.__quill;
+                                            return;
+                                        }
+
+                                        this.$refs.editor.innerHTML = '';
+                                        this.$refs.editor.parentElement.querySelectorAll(':scope > .ql-toolbar').forEach((toolbar) => toolbar.remove());
+
                                         this.quill = new Quill(this.$refs.editor, {
                                             theme: 'snow',
                                             modules: {
@@ -265,17 +335,24 @@
                                                 }
                                             }
                                         });
+                                        this.$refs.editor.__quill = this.quill;
 
                                         const initial = @js($bodyHtml);
                                         if (initial) this.quill.root.innerHTML = initial;
 
                                         this.quill.on('text-change', () => {
+                                            if (this.applyingRemoteContent) return;
                                             $wire.set('bodyHtml', this.quill.root.innerHTML, false);
                                         });
 
                                         $wire.on('quill-set-content', (e) => {
                                             const html = (e && e.html) || (Array.isArray(e) ? e[0]?.html : '') || '';
+                                            this.applyingRemoteContent = true;
                                             this.quill.root.innerHTML = html;
+                                            this.quill.update('silent');
+                                            setTimeout(() => {
+                                                this.applyingRemoteContent = false;
+                                            }, 0);
                                         });
 
                                         $wire.on('quill-insert-image', (e) => {
@@ -293,7 +370,7 @@
                                 }">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Corpo do email <span class="text-red-500">*</span></label>
                                     <p class="text-xs text-gray-500 mb-2">Use <code class="bg-gray-100 px-1 rounded">@{{name}}</code>, <code class="bg-gray-100 px-1 rounded">@{{email}}</code>, <code class="bg-gray-100 px-1 rounded">@{{company_name}}</code> para personalizar.</p>
-                                    <div class="rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+                                    <div wire:ignore class="rounded-lg border border-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
                                         <div x-ref="editor"></div>
                                     </div>
                                     <input type="file" x-ref="fileInput" wire:model="imageUpload" accept="image/*" class="hidden" />
@@ -311,14 +388,15 @@
                                 </div>
                                 <div class="preview-frame">
                                     <div class="preview-card">
-                                        <div style="background:#4f46e5;padding:24px;color:#fff">
-                                            <div style="font-weight:700;font-size:18px">{{ auth()->user()->company?->name ?? 'A sua empresa' }}</div>
-                                            <div style="font-size:12px;color:#c7d2fe;margin-top:2px">{{ $subject ?: 'Assunto do email' }}</div>
+                                        <div style="background:#ffffff;padding:24px 28px 16px;border-bottom:3px solid #245f95">
+                                            <div style="font-weight:700;font-size:18px;color:#0f172a;line-height:1.2">{{ auth()->user()->company?->name ?? 'A sua empresa' }}</div>
+                                            <div style="font-size:12px;color:#64748b;margin-top:6px;line-height:1.5">{{ $subject ?: 'Assunto do email' }}</div>
                                         </div>
-                                        <div style="padding:24px;color:#374151;font-size:14px;line-height:1.65">
+                                        <div style="padding:28px;color:#273241;font-size:14px;line-height:1.65">
                                             {!! $this->previewHtml !!}
                                         </div>
-                                        <div style="background:#f9fafb;padding:14px 24px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af">
+                                        <div style="background:#f8fafc;padding:16px 28px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;line-height:1.6">
+                                            {{ auth()->user()->company?->name ?? 'A sua empresa' }}<br>
                                             Enviado via Khuma CRM
                                         </div>
                                     </div>
@@ -356,6 +434,59 @@
                                     <p class="text-xs text-indigo-700">Clientes com email válido na sua empresa.</p>
                                 </div>
                             </div>
+
+                            <div class="bg-white rounded-xl p-5 border border-gray-200 space-y-4">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-700">Envio</p>
+                                    <p class="text-xs text-gray-500 mt-1">Escolha se esta campanha sai agora ou fica agendada.</p>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:border-indigo-300">
+                                        <input type="radio" wire:model.live="sendMode" value="now" class="text-indigo-600 focus:ring-indigo-500" />
+                                        <span>
+                                            <span class="block text-sm font-medium text-gray-900">Enviar agora</span>
+                                            <span class="block text-xs text-gray-500">Guarda e coloca na fila imediatamente.</span>
+                                        </span>
+                                    </label>
+                                    <label class="flex items-center gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:border-indigo-300">
+                                        <input type="radio" wire:model.live="sendMode" value="scheduled" class="text-indigo-600 focus:ring-indigo-500" />
+                                        <span>
+                                            <span class="block text-sm font-medium text-gray-900">Agendar</span>
+                                            <span class="block text-xs text-gray-500">Define dia, hora e fuso horário.</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                @if($sendMode === 'scheduled')
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Data e hora</label>
+                                            <input type="datetime-local" wire:model="scheduledAt"
+                                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                            @error('scheduledAt') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Fuso horário</label>
+                                            <select wire:model="timezone" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                @foreach($this->timezoneOptions as $tz)
+                                                    <option value="{{ $tz }}">{{ $tz }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('timezone') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <div class="bg-white rounded-xl p-5 border border-gray-200">
+                                <p class="text-sm font-medium text-gray-700 mb-1">Quando alguém responder</p>
+                                <p class="text-xs text-gray-500 mb-3">Controle se respostas viram leads ou ficam apenas no histórico da campanha.</p>
+                                <select wire:model="replyAction" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    @foreach($this->replyActionOptions as $value => $label)
+                                        <option value="{{ $value }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                @error('replyAction') <p class="mt-1 text-xs text-red-500">{{ $message }}</p> @enderror
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -375,7 +506,10 @@
                             @endif
                             <button wire:click="nextStep" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Continuar →</button>
                         @else
-                            <button wire:click="save" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Guardar rascunho</button>
+                            <button wire:click="save" class="px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Guardar rascunho</button>
+                            <button wire:click="saveAndQueue" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                                {{ $sendMode === 'scheduled' ? 'Agendar campanha' : 'Enviar campanha' }}
+                            </button>
                         @endif
                     </div>
                 </div>
@@ -395,7 +529,7 @@
                     </button>
                 </div>
                 <div class="px-6 py-5 space-y-5 overflow-y-auto">
-                    <div class="grid grid-cols-3 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-6 gap-4">
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <p class="text-2xl font-bold text-gray-900">{{ $statsData->recipients_count }}</p>
                             <p class="text-xs text-gray-500 mt-1">Destinatários</p>
@@ -407,6 +541,18 @@
                         <div class="bg-red-50 rounded-lg p-4 text-center">
                             <p class="text-2xl font-bold text-red-600">{{ $statsData->failed_count }}</p>
                             <p class="text-xs text-gray-500 mt-1">Falhas</p>
+                        </div>
+                        <div class="bg-blue-50 rounded-lg p-4 text-center">
+                            <p class="text-2xl font-bold text-blue-700">{{ $statsData->logs->whereNotNull('opened_at')->count() }}</p>
+                            <p class="text-xs text-gray-500 mt-1">Abertos</p>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4 text-center">
+                            <p class="text-2xl font-bold text-purple-700">{{ $statsData->logs->whereNotNull('clicked_at')->count() }}</p>
+                            <p class="text-xs text-gray-500 mt-1">Cliques</p>
+                        </div>
+                        <div class="bg-amber-50 rounded-lg p-4 text-center">
+                            <p class="text-2xl font-bold text-amber-700">{{ $statsData->logs->whereNotNull('replied_at')->count() }}</p>
+                            <p class="text-xs text-gray-500 mt-1">Respostas</p>
                         </div>
                     </div>
                     @if($statsData->recipients_count > 0)
@@ -426,7 +572,8 @@
                                 <tr class="text-xs text-gray-500 uppercase">
                                     <th class="py-2 pr-4 text-left">Email</th>
                                     <th class="py-2 pr-4 text-left">Estado</th>
-                                    <th class="py-2 text-left">Data</th>
+                                    <th class="py-2 pr-4 text-left">Engajamento</th>
+                                    <th class="py-2 text-left">Lead</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-50">
@@ -442,7 +589,19 @@
                                                 <span class="text-gray-400">Pendente</span>
                                             @endif
                                         </td>
-                                        <td class="py-2 text-gray-500">{{ $log->sent_at?->format('d/m/Y H:i') ?? '—' }}</td>
+                                        <td class="py-2 pr-4 text-gray-500">
+                                            <div>Enviado: {{ $log->sent_at?->format('d/m/Y H:i') ?? '—' }}</div>
+                                            <div>Aberto: {{ $log->opened_at?->format('d/m/Y H:i') ?? '—' }}</div>
+                                            <div>Clique: {{ $log->clicked_at?->format('d/m/Y H:i') ?? '—' }}</div>
+                                            <div>Resposta: {{ $log->replied_at?->format('d/m/Y H:i') ?? '—' }}</div>
+                                        </td>
+                                        <td class="py-2 text-gray-500">
+                                            @if($log->lead)
+                                                <span class="text-indigo-600 font-medium">{{ $log->lead->reference }}</span>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>

@@ -58,14 +58,11 @@ class CallLogController extends Controller
                 // 🔹 Subscriber só vê as próprias chamadas
                 $query->where('user_id', $user->id);
 
-                // Verifica plano
-                $subscription = $user->subscription; // relação hasOne
-                if ($subscription) {
-                    if ($subscription->plan === 'kuma_essencial') {
-                        $query->where('started_at', '>=', now()->subMonths(3))
-                            ->limit(200);
-                    }
-                    // kuma_premium → sem limites
+                $subscription = $user->activeSubscription()->with('plan')->first();
+
+                if ($subscription?->plan?->code === 'ubuntu') {
+                    $query->where('started_at', '>=', now()->subMonths(3))
+                        ->limit(200);
                 }
             }
 

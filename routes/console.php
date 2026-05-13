@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\DispatchTenantInboundFetches;
+use App\Jobs\DispatchScheduledEmailCampaigns;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -13,3 +14,8 @@ Schedule::job(new DispatchTenantInboundFetches())
     ->everyMinute()
     ->withoutOverlapping()
     ->name('tenant-inbound-fetches');
+
+Schedule::job(new DispatchScheduledEmailCampaigns())
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->name('scheduled-email-campaigns');

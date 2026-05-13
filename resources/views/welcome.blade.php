@@ -168,6 +168,7 @@
 
         <div class="flex items-center space-x-4">
             <a href="{{ route('login') }}" class="text-gray-700 font-medium hover:text-primary transition hidden md:block">Entrar</a>
+            <a href="{{ route('register') }}" class="hidden rounded-lg border border-primary px-5 py-2 font-medium text-primary transition hover:bg-blue-50 md:block">Criar conta</a>
             <a href="https://wa.me/258878700088?text=Olá%20👋%2C%20tenho%20interesse%20no%20Khuma!" target="_blank" class="bg-primary text-white px-6 py-2 rounded-lg font-medium hover:bg-secondary transition shadow-md">
                 <i class="fab fa-whatsapp mr-2"></i>Demonstração
             </a>
@@ -187,8 +188,8 @@
             <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">Transforme o WhatsApp no seu maior canal de vendas</h1>
             <p class="text-xl mb-8 opacity-90 leading-relaxed">CRM completo com chatbot inteligente para WhatsApp. Automatize atendimento, capture leads 24/7 e converta conversas em vendas.</p>
             <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6">
-                <a href="https://wa.me/258878700088?text=Olá%20👋%2C%20quero%20uma%20demonstração%20do%20Khuma%20CRM!" target="_blank" class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-center hover:bg-gray-50 transition shadow-lg hover:shadow-xl">
-                    <i class="fab fa-whatsapp mr-2"></i>Começar Agora
+                <a href="{{ route('register') }}" class="bg-white text-primary px-8 py-4 rounded-xl font-semibold text-center hover:bg-gray-50 transition shadow-lg hover:shadow-xl">
+                    <i class="fas fa-user-plus mr-2"></i>Começar Agora
                 </a>
                 <a href="#pricing" class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-center hover:bg-white hover:bg-opacity-10 transition">
                     <i class="fas fa-chart-line mr-2"></i>Ver Planos

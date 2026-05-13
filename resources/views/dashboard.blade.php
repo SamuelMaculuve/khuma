@@ -2,6 +2,17 @@
 
     <div class="p-6 space-y-6">
 
+        @unless(auth()->user()->hasActiveSubscription())
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span>Escolha uma subscrição para desbloquear CRM, WhatsApp, email marketing e outros módulos.</span>
+                    <a href="{{ route('subscription.plans') }}" class="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
+                        Ver planos
+                    </a>
+                </div>
+            </div>
+        @endunless
+
         {{-- KPI Cards --}}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div class="stat-card">

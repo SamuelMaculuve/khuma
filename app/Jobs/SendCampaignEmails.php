@@ -15,6 +15,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class SendCampaignEmails implements ShouldQueue
 {
@@ -28,6 +29,11 @@ class SendCampaignEmails implements ShouldQueue
     public function handle(): void
     {
         $campaign = EmailCampaign::with('company')->findOrFail($this->campaignId);
+
+        if ($campaign->status === 'scheduled' && $campaign->scheduled_at && $campaign->scheduled_at->isFuture()) {
+            return;
+        }
+
         $campaign->update(['status' => 'sending']);
 
         $company = $campaign->company;
@@ -53,19 +59,33 @@ class SendCampaignEmails implements ShouldQueue
 
         $query->chunk(100, function ($clients) use ($campaign, $company, $mailer, &$sentCount, &$failedCount) {
             foreach ($clients as $client) {
-                $log = EmailCampaignLog::create([
-                    'email_campaign_id' => $campaign->id,
-                    'client_id'         => $client->id,
-                    'email_address'     => $client->email,
-                    'status'            => 'pending',
-                ]);
+                $log = EmailCampaignLog::firstOrCreate(
+                    [
+                        'email_campaign_id' => $campaign->id,
+                        'client_id'         => $client->id,
+                    ],
+                    [
+                        'email_address'   => $client->email,
+                        'tracking_token'  => (string) Str::uuid(),
+                        'message_id'      => sprintf('campaign-%d-log-%s@%s', $campaign->id, Str::uuid(), parse_url(config('app.url'), PHP_URL_HOST) ?: 'khuma.local'),
+                        'status'          => 'pending',
+                    ],
+                );
+                if (! $log->tracking_token || ! $log->message_id) {
+                    $log->forceFill([
+                        'email_address' => $client->email,
+                        'tracking_token' => $log->tracking_token ?: (string) Str::uuid(),
+                        'message_id' => $log->message_id ?: sprintf('campaign-%d-log-%s@%s', $campaign->id, Str::uuid(), parse_url(config('app.url'), PHP_URL_HOST) ?: 'khuma.local'),
+                    ])->save();
+                }
 
                 try {
-                    $mailable = (new CampaignEmail($campaign, $client, $company?->name ?? ''))
+                    $mailable = (new CampaignEmail($campaign, $client, $company?->name ?? '', $log))
                         ->replyTo(
-                            $company?->mail_provision_status === 'ready'
-                                ? 'campaign@' . $company->mail_subdomain . '.' . config('services.mail_tenant.parent_domain')
-                                : config('mail.from.address')
+                            $campaign->reply_to_email
+                                ?: ($company?->mail_provision_status === 'ready'
+                                    ? 'campaign@' . $company->mail_subdomain . '.' . config('services.mail_tenant.parent_domain')
+                                    : config('mail.from.address'))
                         );
                     $mailer->to($client->email)->send($mailable);
 

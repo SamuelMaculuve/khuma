@@ -1,4 +1,5 @@
 <div class="p-6 max-w-md mx-auto">
+    @php $price = $plan->currentPrice(); @endphp
 
     <h1 style="font-size:22px;font-weight:700;color:#333;margin-bottom:24px;">Confirmar Pagamento</h1>
 
@@ -14,15 +15,15 @@
         </div>
         <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px;">
             <span style="color:#555;">Preço</span>
-            <strong>{{ number_format($plan->currentPrice()->amount, 2) }} MZN</strong>
+            <strong>{{ $price ? number_format($price->amount, 2) . ' ' . $price->currency : 'Sob consulta' }}</strong>
         </div>
         <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px;">
             <span style="color:#555;">IVA (16%)</span>
-            <strong>{{ number_format($plan->currentPrice()->amount * 0.16, 2) }} MZN</strong>
+            <strong>{{ $price ? number_format($price->amount * 0.16, 2) . ' ' . $price->currency : '-' }}</strong>
         </div>
         <div style="display:flex;justify-content:space-between;padding:14px 0;font-size:16px;font-weight:700;">
             <span>Total</span>
-            <span style="color:#2c6fad;">{{ number_format($plan->currentPrice()->amount * 1.16, 2) }} MZN</span>
+            <span style="color:#2c6fad;">{{ $price ? number_format($price->amount * 1.16, 2) . ' ' . $price->currency : 'Sob consulta' }}</span>
         </div>
 
         <div style="margin-top:16px;">
@@ -31,7 +32,7 @@
             @error('phone')
                 <p style="font-size:12px;color:#dc2626;margin-bottom:8px;">{{ $message }}</p>
             @enderror
-            <button wire:click="pay" wire:loading.attr="disabled"
+            <button wire:click="pay" wire:loading.attr="disabled" @disabled(!$price)
                     style="width:100%;padding:12px;background:#2c6fad;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;">
                 <span wire:loading.remove>Pagar com M-Pesa</span>
                 <span wire:loading>A processar...</span>

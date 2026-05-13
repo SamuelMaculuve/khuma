@@ -22,7 +22,16 @@ class ChoosePlan extends Component
 
     public function continue()
     {
+        $this->validate([
+            'selectedPlanId' => ['required', 'exists:plans,id'],
+        ]);
+
         $this->redirectRoute('subscription.checkout', $this->selectedPlanId);
+    }
+
+    public function skipForNow()
+    {
+        $this->redirectRoute('dashboard');
     }
 
 

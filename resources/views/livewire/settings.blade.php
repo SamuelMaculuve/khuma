@@ -76,27 +76,123 @@
             @endif
 
             {{-- Email integration status --}}
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <div class="flex items-center justify-between mb-4">
+            <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+                 @if(in_array($mailStatus, ['pending', 'provisioning'])) wire:poll.8s="refreshMailStatus" @endif>
+                @php
+                    $isReady = $mailStatus === 'ready';
+                    $isProvisioning = $mailStatus === 'provisioning';
+                    $isPending = $mailStatus === 'pending';
+                    $isFailed = $mailStatus === 'failed';
+                    $parent = config('services.mail_tenant.parent_domain');
+                    $fqdn = $company?->mail_subdomain ? $company->mail_subdomain . '.' . $parent : null;
+                    $minutesSinceUpdate = $company?->updated_at ? $company->updated_at->diffInMinutes(now()) : null;
+                    $hasStalled = $isProvisioning && $minutesSinceUpdate !== null && $minutesSinceUpdate >= 10;
+                    $statusConfig = match ($mailStatus) {
+                        'ready' => [
+                            'label' => 'Activo',
+                            'title' => 'Email dedicado pronto',
+                            'body' => 'Os endereços de email da sua empresa já podem receber respostas e enviar campanhas.',
+                            'badge' => 'bg-emerald-100 text-emerald-800',
+                            'dot' => 'bg-emerald-500',
+                            'panel' => 'from-emerald-50 to-white',
+                            'icon' => 'fa-circle-check',
+                            'iconColor' => 'text-emerald-600 bg-emerald-100',
+                        ],
+                        'provisioning' => [
+                            'label' => 'A configurar',
+                            'title' => $hasStalled ? 'A configuração está a demorar mais que o normal' : 'Estamos a configurar o email dedicado',
+                            'body' => $hasStalled
+                                ? 'O pedido foi enviado, mas não houve atualização recente. Normalmente isto indica que a fila não está a correr ou que uma API externa não respondeu.'
+                                : 'Estamos a criar o domínio, caixa de entrada, aliases, DNS e DKIM. Esta página atualiza automaticamente.',
+                            'badge' => 'bg-amber-100 text-amber-800',
+                            'dot' => 'bg-amber-500 animate-pulse',
+                            'panel' => 'from-amber-50 to-white',
+                            'icon' => 'fa-circle-notch fa-spin',
+                            'iconColor' => 'text-amber-600 bg-amber-100',
+                        ],
+                        'failed' => [
+                            'label' => 'Falhou',
+                            'title' => 'Não foi possível configurar o email',
+                            'body' => 'Revise os detalhes do erro abaixo e tente novamente depois de corrigir a configuração.',
+                            'badge' => 'bg-red-100 text-red-800',
+                            'dot' => 'bg-red-500',
+                            'panel' => 'from-red-50 to-white',
+                            'icon' => 'fa-triangle-exclamation',
+                            'iconColor' => 'text-red-600 bg-red-100',
+                        ],
+                        default => [
+                            'label' => 'Não iniciado',
+                            'title' => 'Email dedicado ainda não ativado',
+                            'body' => 'Ative o email dedicado para usar aliases de equipa, campanhas e respostas ligadas aos leads.',
+                            'badge' => 'bg-slate-100 text-slate-700',
+                            'dot' => 'bg-slate-400',
+                            'panel' => 'from-slate-50 to-white',
+                            'icon' => 'fa-envelope',
+                            'iconColor' => 'text-slate-500 bg-slate-100',
+                        ],
+                    };
+                @endphp
+
+                <div class="bg-gradient-to-br {{ $statusConfig['panel'] }} p-6">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <h2 class="font-semibold text-gray-900">Integração de Email</h2>
                         <p class="text-sm text-gray-500 mt-0.5">O seu endereço de email dedicado para leads e campanhas.</p>
                     </div>
-                    @php
-                        $isReady = $mailStatus === 'ready';
-                        $isPending = in_array($mailStatus, ['pending', 'provisioning']);
-                    @endphp
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-                        {{ $isReady ? 'bg-emerald-100 text-emerald-800' : ($isPending ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800') }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $isReady ? 'bg-emerald-500' : ($isPending ? 'bg-amber-500' : 'bg-red-500') }}"></span>
-                        {{ $isReady ? 'Activo' : ($isPending ? 'A configurar...' : 'Inactivo') }}
+                        {{ $statusConfig['badge'] }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $statusConfig['dot'] }}"></span>
+                        {{ $statusConfig['label'] }}
                     </span>
+                    </div>
+
+                    <div class="mt-6 flex gap-4 rounded-2xl border border-white/70 bg-white/80 p-5 shadow-sm">
+                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl {{ $statusConfig['iconColor'] }}">
+                            <i class="fa-solid {{ $statusConfig['icon'] }}"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h3 class="font-semibold text-gray-900">{{ $statusConfig['title'] }}</h3>
+                            <p class="mt-1 text-sm leading-6 text-gray-600">{{ $statusConfig['body'] }}</p>
+
+                            @if($isProvisioning)
+                                <div class="mt-4 grid gap-2 sm:grid-cols-4">
+                                    @foreach([
+                                        ['label' => 'Pedido', 'done' => true],
+                                        ['label' => 'Mailcow', 'done' => $company?->mail_inbox_local_part],
+                                        ['label' => 'DNS', 'done' => filled($company?->mail_cloudflare_records)],
+                                        ['label' => 'Pronto', 'done' => $isReady],
+                                    ] as $step)
+                                        <div class="rounded-xl border px-3 py-2 {{ $step['done'] ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800' }}">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa-solid {{ $step['done'] ? 'fa-check' : 'fa-clock' }} text-xs"></i>
+                                                <span class="text-xs font-semibold">{{ $step['label'] }}</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                @if($hasStalled)
+                                    <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                                        <p class="font-semibold">Verifique se o worker da fila está ativo.</p>
+                                        <p class="mt-1 text-amber-800">Com `QUEUE_CONNECTION=database` ou `redis`, este processo só avança quando `php artisan queue:work` estiver em execução.</p>
+                                    </div>
+                                @endif
+                            @endif
+
+                            @if($isFailed && $company?->mail_provision_error)
+                                <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-red-700">Erro técnico</p>
+                                    <p class="mt-1 break-words text-sm text-red-800">{{ $company->mail_provision_error }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
+
+                <div class="border-t border-gray-100 p-6">
 
                 @if($isReady && $company?->mail_subdomain)
                     @php
-                        $parent = config('services.mail_tenant.parent_domain');
-                        $fqdn   = $company->mail_subdomain . '.' . $parent;
                         $emailUses = [
                             ['address' => 'commercial@' . $fqdn, 'label' => 'Leads & CRM',      'icon' => 'fa-handshake',  'color' => 'bg-blue-100 text-blue-600'],
                             ['address' => 'campaign@'   . $fqdn, 'label' => 'Email Marketing',  'icon' => 'fa-bullhorn',   'color' => 'bg-purple-100 text-purple-600'],
@@ -119,29 +215,40 @@
                     <p class="text-xs text-gray-400 mt-3">
                         Os seus clientes podem responder directamente a estes endereços. As respostas aparecem automaticamente nos leads correspondentes.
                     </p>
-                @elseif($isPending)
-                    <div class="flex items-center gap-3 p-4 bg-amber-50 rounded-xl">
-                        <i class="fa-solid fa-circle-notch fa-spin text-amber-500"></i>
-                        <p class="text-sm text-amber-700">A configurar o seu email dedicado. Isto pode demorar alguns minutos.</p>
-                    </div>
                 @else
-                    <div class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                        <i class="fa-solid fa-envelope text-gray-400"></i>
-                        <p class="text-sm text-gray-600">O email dedicado ainda não foi activado. Clique em "Activar email" para começar.</p>
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach($mailDiagnostics as $item)
+                            <div class="flex items-center gap-3 rounded-xl border px-4 py-3 {{ $item['ok'] ? 'border-emerald-100 bg-emerald-50' : 'border-red-100 bg-red-50' }}">
+                                <span class="flex h-8 w-8 items-center justify-center rounded-lg {{ $item['ok'] ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                                    <i class="fa-solid {{ $item['ok'] ? 'fa-check' : 'fa-xmark' }} text-xs"></i>
+                                </span>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-800">{{ $item['label'] }}</p>
+                                    <p class="text-xs {{ $item['ok'] ? 'text-emerald-700' : 'text-red-700' }}">{{ $item['ok'] ? 'Configurado' : 'Em falta' }}</p>
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 @endif
 
                 @if(!$isReady)
-                    <div class="mt-4">
+                    <div class="mt-5 flex flex-col gap-3 sm:flex-row">
+                        <button wire:click="refreshMailStatus" wire:loading.attr="disabled"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50">
+                            <i class="fa-solid fa-rotate text-xs"></i>
+                            Atualizar estado
+                        </button>
                         <button wire:click="reprovisionMail" wire:loading.attr="disabled"
-                                class="px-4 py-2 bg-[#2c6fad] text-white text-sm font-medium rounded-xl hover:bg-[#1f5fa3] transition-colors disabled:opacity-50">
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2c6fad] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1f5fa3] disabled:opacity-50">
                             <span wire:loading.remove wire:target="reprovisionMail">
-                                <i class="fa-solid fa-envelope mr-1.5"></i> Activar email
+                                <i class="fa-solid {{ $isFailed || $hasStalled ? 'fa-rotate-right' : 'fa-envelope' }} mr-1.5"></i>
+                                {{ $isFailed || $hasStalled ? 'Tentar novamente' : 'Activar email' }}
                             </span>
                             <span wire:loading wire:target="reprovisionMail">A activar...</span>
                         </button>
                     </div>
                 @endif
+                </div>
             </div>
 
         </div>

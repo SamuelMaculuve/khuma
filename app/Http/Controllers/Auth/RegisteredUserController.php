@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Jobs\ProvisionTenantMailDomain;
 use App\Models\Companies;
+use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Role;
 
 class RegisteredUserController extends Controller
 {
@@ -21,7 +23,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'plans' => Plan::with(['features', 'prices'])->get(),
+        ]);
     }
 
     /**
@@ -33,7 +37,10 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'company_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'phone' => ['required', 'string', 'max:30'],
+            'plan_id' => ['nullable', 'exists:plans,id'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
         $companies = Companies::create([
@@ -51,12 +58,15 @@ class RegisteredUserController extends Controller
             'company_id' => $companies->id,
         ]);
 
-        // Atribui o role "subscriber"
-        $user->assignRole('subscriber');
+        $user->assignRole(Role::firstOrCreate(['name' => 'subscriber']));
 
         event(new Registered($user));
 
         Auth::login($user);
+
+        if ($request->filled('plan_id')) {
+            return redirect()->route('subscription.checkout', $request->integer('plan_id'));
+        }
 
         return redirect(route('dashboard', absolute: false));
     }

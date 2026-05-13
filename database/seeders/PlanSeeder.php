@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Plan;
+use App\Models\PlanFeature;
 use App\Models\PlanPrice;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -16,46 +17,99 @@ class PlanSeeder extends Seeder
     {
 
         $plans = [
-            'ubuntu' => ['Ubuntu', 'Plano básico'],
-            'baoba'  => ['Baobá', 'Plano intermédio'],
-            'leao'   => ['Leão', 'Plano premium'],
+            'ubuntu' => [
+                'name' => 'Ubuntu',
+                'description' => 'Plano básico para começar com CRM, WhatsApp e relatórios.',
+                'amount' => 1500,
+                'features' => [
+                    'crm' => 1,
+                    'whatsapp' => 1,
+                    'reports' => 1,
+                    'settings' => 1,
+                    'members' => 2,
+                    'chatbot_lines' => 500,
+                    'whatsapp_instances' => 1,
+                    'email_campaigns' => 0,
+                    'team_management' => 0,
+                    'call_logs' => 0,
+                    'product_sales' => 0,
+                    'bulk_messages' => 0,
+                ],
+            ],
+            'baoba' => [
+                'name' => 'Baobá',
+                'description' => 'Plano intermédio para equipas em crescimento.',
+                'amount' => 8000,
+                'features' => [
+                    'crm' => 1,
+                    'whatsapp' => 1,
+                    'email_campaigns' => 1,
+                    'reports' => 1,
+                    'settings' => 1,
+                    'team_management' => 1,
+                    'call_logs' => 1,
+                    'members' => 5,
+                    'chatbot_lines' => 1500,
+                    'whatsapp_instances' => 2,
+                    'product_sales' => 1,
+                    'bulk_messages' => 1,
+                ],
+            ],
+            'leao' => [
+                'name' => 'Leão',
+                'description' => 'Plano premium para operações estabelecidas.',
+                'amount' => 25000,
+                'features' => [
+                    'crm' => 1,
+                    'whatsapp' => 1,
+                    'email_campaigns' => 1,
+                    'reports' => 1,
+                    'settings' => 1,
+                    'team_management' => 1,
+                    'call_logs' => 1,
+                    'members' => 'unlimited',
+                    'chatbot_lines' => 'unlimited',
+                    'whatsapp_instances' => 'unlimited',
+                    'product_sales' => 1,
+                    'bulk_messages' => 1,
+                    'whatsapp_templates' => 1,
+                    'priority_support' => 1,
+                ],
+            ],
         ];
 
-        foreach ($plans as $code => [$name, $desc]) {
-            $plan = Plan::create([
-                'code' => $code,
-                'name' => $name,
-                'description' => $desc,
-            ]);
+        foreach ($plans as $code => $data) {
+            $plan = Plan::updateOrCreate(
+                ['code' => $code],
+                [
+                    'name' => $data['name'],
+                    'description' => $data['description'],
+                ]
+            );
 
-            PlanPrice::create([
-                'plan_id' => $plan->id,
-                'amount' => match ($code) {
-                    'ubuntu' => 1500,
-                    'baoba' => 8000,
-                    'leao' => 25000,
-                },
-                'is_active' => true,
-            ]);
+            PlanPrice::where('plan_id', $plan->id)->update(['is_active' => false]);
 
-            if ($plan->code === 'ubuntu') {
-                $plan->features()->createMany([
-                    ['feature_key' => 'members', 'feature_value' => 2],
-                    ['feature_key' => 'whatsapp_instances', 'feature_value' => 1],
-                ]);
-            }
-            if ($plan->code === 'baoba') {
-                $plan->features()->createMany([
-                    ['feature_key' => 'members', 'feature_value' => 5],
-                    ['feature_key' => 'chatbot_lines', 'feature_value' => 500],
-                ]);
-            }
+            PlanPrice::updateOrCreate(
+                [
+                    'plan_id' => $plan->id,
+                    'amount' => $data['amount'],
+                    'currency' => 'MZN',
+                ],
+                [
+                    'is_active' => true,
+                    'starts_at' => now(),
+                    'ends_at' => null,
+                ]
+            );
 
-            if ($plan->code === 'leao') {
-                $plan->features()->createMany([
-                    ['feature_key' => 'members', 'feature_value' => 'unlimited'],
-                    ['feature_key' => 'chatbot_lines', 'feature_value' => 'unlimited'],
-                ]);
+            foreach ($data['features'] as $key => $value) {
+                PlanFeature::updateOrCreate(
+                    [
+                        'plan_id' => $plan->id,
+                        'feature_key' => $key,
+                    ],
+                    ['feature_value' => $value]
+                );
             }
         }
     }

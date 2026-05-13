@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Clients;
 use App\Models\Leads;
 use App\Models\Messages;
+use App\Models\Team;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -26,6 +27,7 @@ class KanbanBoard extends Component
     public $search = '';
     public $filterStatus = 'todos';
     public $filterPriority = 'todos';
+    public string $selectedTeamId = 'all';
 
     // Propriedades para ordenação
     public $sortField = 'id';
@@ -39,8 +41,10 @@ class KanbanBoard extends Component
     public ?string $lead_value = null;
     public ?string $lead_expected_close_date = null;
     public string $lead_source = '';
+    public ?int $lead_team_id = null;
 
     public $availableClients = [];
+    public $availableTeams = [];
 
     public bool $creatingNewClient = false;
     public string $new_client_name  = '';
@@ -55,6 +59,7 @@ class KanbanBoard extends Component
             'lead_value'               => ['nullable', 'numeric', 'min:0'],
             'lead_expected_close_date' => ['nullable', 'date'],
             'lead_source'              => ['nullable', 'string', 'max:255'],
+            'lead_team_id'             => ['nullable', 'exists:teams,id'],
             'leadStatus'               => ['required', 'string'],
         ];
 
@@ -109,6 +114,10 @@ class KanbanBoard extends Component
         }
 
         if ($itemToMove !== null) {
+            Leads::where('company_id', auth()->user()->company_id)
+                ->whereKey($itemId)
+                ->update(['status' => $toState]);
+
             // Remover do estado de origem
             array_splice($this->states[$fromState], $itemIndex, 1);
 
@@ -127,6 +136,7 @@ class KanbanBoard extends Component
 
         $this->resetLeadForm();
         $this->leadStatus = $stateName;
+        $this->lead_team_id = $this->selectedTeamId !== 'all' ? (int) $this->selectedTeamId : null;
         $this->availableClients = Clients::where('company_id', $companyId)
             ->orderBy('name')
             ->get(['id', 'name'])
@@ -179,6 +189,7 @@ class KanbanBoard extends Component
         $lead = Leads::create([
             'client_id'           => $clientId,
             'company_id'          => $companyId,
+            'team_id'             => $data['lead_team_id'] ?? null,
             'reference'           => 'LD-' . $companyId . '-' . strtoupper(Str::random(8)),
             'title'               => $data['lead_title'],
             'description'         => $data['lead_description'] ?: null,
@@ -187,6 +198,7 @@ class KanbanBoard extends Component
             'expected_close_date' => $data['lead_expected_close_date'] ?: null,
             'source'              => $data['lead_source'] ?: null,
         ]);
+        $lead->load('team');
 
         if (array_key_exists($lead->status, $this->states)) {
             $clientName = $this->creatingNewClient
@@ -200,6 +212,7 @@ class KanbanBoard extends Component
                 'reference'   => $lead->reference,
                 'title'       => $lead->title,
                 'description' => $lead->description,
+                'team_name'   => $lead->team?->name,
                 'status'      => $lead->status,
                 'value'       => $lead->value,
                 'source'      => $lead->source,
@@ -222,12 +235,18 @@ class KanbanBoard extends Component
             'lead_value',
             'lead_expected_close_date',
             'lead_source',
+            'lead_team_id',
             'creatingNewClient',
             'new_client_name',
             'new_client_email',
             'new_client_phone',
         ]);
         $this->resetValidation();
+    }
+
+    public function updatedSelectedTeamId(): void
+    {
+        $this->loadLeads();
     }
 
     public function switchView($mode)
@@ -297,8 +316,21 @@ class KanbanBoard extends Component
 
     public function mount()
     {
-        $leads = Leads::with('client')
+        $this->availableTeams = Team::where('company_id', auth()->user()->company_id)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->toArray();
+
+        $this->loadLeads();
+    }
+
+    private function loadLeads(): void
+    {
+        $this->resetStates();
+
+        $leads = Leads::with(['client', 'team'])
             ->where('company_id', auth()->user()->company_id)
+            ->when($this->selectedTeamId !== 'all', fn ($query) => $query->where('team_id', (int) $this->selectedTeamId))
             ->get();
 
         foreach ($leads as $lead) {
@@ -313,6 +345,7 @@ class KanbanBoard extends Component
                 'reference'   => $lead->reference,
                 'title'       => $lead->title,
                 'description' => $lead->description,
+                'team_name'   => $lead->team?->name,
                 'status'      => $lead->status,
                 'value'       => $lead->value,
                 'source'      => $lead->source,
@@ -320,6 +353,13 @@ class KanbanBoard extends Component
                     ? Carbon::parse($lead->expected_close_date)->diffForHumans()
                     : null,
             ];
+        }
+    }
+
+    private function resetStates(): void
+    {
+        foreach (array_keys($this->states) as $state) {
+            $this->states[$state] = [];
         }
     }
 

@@ -28,6 +28,12 @@
 {{-- Toolbar --}}
 <div class="kb-toolbar">
     <input class="kb-search" type="text" wire:model.live.debounce.300ms="search" placeholder="Pesquisar leads...">
+    <select wire:model.live="selectedTeamId" style="height:32px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;padding:0 10px;background:#fff;color:#444;">
+        <option value="all">Todas as equipas</option>
+        @foreach($availableTeams as $team)
+            <option value="{{ $team['id'] }}">{{ $team['name'] }}</option>
+        @endforeach
+    </select>
     <span style="font-size:12px;color:#888;margin-left:auto;">
         {{ array_sum(array_map('count', $states)) }} leads
     </span>
@@ -106,6 +112,11 @@
                         @if(!empty($item['source']))
                             <div style="margin-bottom:4px;">
                                 <span class="kb-card-badge" style="background:#f0f0f0;color:#555;">{{ $item['source'] }}</span>
+                            </div>
+                        @endif
+                        @if(!empty($item['team_name']))
+                            <div style="margin-bottom:4px;">
+                                <span class="kb-card-badge" style="background:#dbeafe;color:#1d4ed8;">{{ $item['team_name'] }}</span>
                             </div>
                         @endif
 
@@ -211,6 +222,18 @@
                 <label style="font-size:13px;font-weight:500;color:#444;display:block;margin-bottom:5px;">Fonte</label>
                 <input type="text" wire:model="lead_source" placeholder="WhatsApp, website, indicação..."
                        style="width:100%;border:1px solid #d1d5db;border-radius:4px;padding:7px 10px;font-size:13px;">
+            </div>
+
+            <div>
+                <label style="font-size:13px;font-weight:500;color:#444;display:block;margin-bottom:5px;">Equipa / pipeline</label>
+                <select wire:model="lead_team_id"
+                        style="width:100%;border:1px solid #d1d5db;border-radius:4px;padding:7px 10px;font-size:13px;">
+                    <option value="">Sem equipa</option>
+                    @foreach($availableTeams as $team)
+                        <option value="{{ $team['id'] }}">{{ $team['name'] }}</option>
+                    @endforeach
+                </select>
+                @error('lead_team_id')<p style="font-size:11px;color:#dc2626;margin-top:3px;">{{ $message }}</p>@enderror
             </div>
 
             <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px;">

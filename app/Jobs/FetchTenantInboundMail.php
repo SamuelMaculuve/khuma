@@ -8,6 +8,7 @@ use App\Models\EmailCampaignLog;
 use App\Models\InboundEmail;
 use App\Models\Leads;
 use App\Models\Messages;
+use App\Models\Team;
 use Illuminate\Support\Str;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -103,7 +104,7 @@ class FetchTenantInboundMail implements ShouldQueue
 
         $email = InboundEmail::create([
             'company_id'   => $company->id,
-            'alias'        => $this->aliasBucket($alias),
+            'alias'        => $this->aliasBucket($company, $alias),
             'to_address'   => $to,
             'from_address' => $from,
             'from_name'    => $fromName,
@@ -133,6 +134,11 @@ class FetchTenantInboundMail implements ShouldQueue
                 return;
             }
 
+            if ($this->routeCampaignReply($company, $email)) {
+                $email->update(['status' => 'processed']);
+                return;
+            }
+
             // For commercial@, campaign@, catchall@ — link reply to the originating lead
             $lead = $this->resolveLeadFromEmail($company, $email);
 
@@ -158,9 +164,128 @@ class FetchTenantInboundMail implements ShouldQueue
         }
     }
 
+    private function routeCampaignReply(Companies $company, InboundEmail $email): bool
+    {
+        $log = null;
+
+        if ($email->in_reply_to) {
+            $log = EmailCampaignLog::with('campaign.replyTeam')
+                ->whereHas('campaign', fn ($q) => $q->where('company_id', $company->id))
+                ->where('message_id', $email->in_reply_to)
+                ->first();
+        }
+
+        if (! $log && $email->from_address) {
+            $log = EmailCampaignLog::with('campaign.replyTeam')
+                ->whereHas('campaign', fn ($q) => $q->where('company_id', $company->id))
+                ->where('email_address', $email->from_address)
+                ->where('status', 'sent')
+                ->latest('sent_at')
+                ->first();
+        }
+
+        if (! $log || ! $log->campaign) {
+            return false;
+        }
+
+        $campaign = $log->campaign;
+        $replyTeam = $this->teamForInboundEmail($company, $email);
+        if ($campaign->reply_team_id && $replyTeam?->id !== $campaign->reply_team_id) {
+            return false;
+        }
+
+        $lead = null;
+
+        if ($campaign->reply_action === \App\Models\EmailCampaign::REPLY_CREATE_IF_NONE) {
+            $client = $this->findOrCreateClientFromEmail($company, $email);
+            $lead = Leads::where('company_id', $company->id)
+                ->where('client_id', $client->id)
+                ->when($campaign->reply_team_id, fn ($query) => $query->where('team_id', $campaign->reply_team_id))
+                ->whereNotIn('status', ['won', 'lost'])
+                ->latest()
+                ->first();
+
+            if (! $lead) {
+                $lead = $this->createLeadFromCampaignReply($company, $email, $client, $campaign->name, $campaign->reply_team_id);
+            }
+        } elseif ($campaign->reply_action === \App\Models\EmailCampaign::REPLY_ALWAYS_CREATE) {
+            $client = $this->findOrCreateClientFromEmail($company, $email);
+            $lead = $this->createLeadFromCampaignReply($company, $email, $client, $campaign->name, $campaign->reply_team_id);
+        }
+
+        $log->forceFill([
+            'replied_at' => $log->replied_at ?: now(),
+            'reply_count' => ((int) $log->reply_count) + 1,
+            'inbound_email_id' => $email->id,
+            'lead_id' => $lead?->id ?: $log->lead_id,
+        ])->save();
+
+        if ($lead) {
+            $rawBody = $email->body_text ?? strip_tags($email->body_html ?? '');
+            $content = $this->stripQuotedContent($rawBody);
+
+            Messages::create([
+                'message_id' => $email->message_id ?? 'inbound-' . Str::uuid(),
+                'message_to' => $lead->client?->email ?? $email->from_address,
+                'lead_id'    => $lead->id,
+                'sender_id'  => null,
+                'client_id'  => $lead->client_id,
+                'channel'    => 'email',
+                'direction'  => 'inbound',
+                'content'    => $content ?: $rawBody,
+            ]);
+        }
+
+        return true;
+    }
+
+    private function findOrCreateClientFromEmail(Companies $company, InboundEmail $email): Clients
+    {
+        $client = Clients::where('company_id', $company->id)
+            ->where('email', $email->from_address)
+            ->first();
+
+        if ($client) {
+            return $client;
+        }
+
+        return Clients::create([
+            'company_id' => $company->id,
+            'name'       => $email->from_name ?: explode('@', $email->from_address)[0],
+            'email'      => $email->from_address,
+        ]);
+    }
+
+    private function createLeadFromCampaignReply(Companies $company, InboundEmail $email, Clients $client, string $campaignName, ?int $teamId = null): Leads
+    {
+        return Leads::create([
+            'client_id'  => $client->id,
+            'company_id' => $company->id,
+            'team_id'    => $teamId,
+            'reference'  => 'LD-' . $company->id . '-' . strtoupper(Str::random(8)),
+            'title'      => 'Resposta à campanha: ' . $campaignName,
+            'description'=> $email->subject,
+            'status'     => 'new',
+            'source'     => 'email_campaign',
+        ]);
+    }
+
     private function resolveLeadFromEmail(Companies $company, InboundEmail $email): ?Leads
     {
-        // 1. Try to find lead by reference in subject (e.g. "Re: Lead #LD-3-XXXX")
+        $team = $this->teamForInboundEmail($company, $email);
+
+        // 1. Prefer exact thread matching against the outbound email Message-ID.
+        if ($email->in_reply_to) {
+            $message = Messages::where('message_id', $email->in_reply_to)
+                ->whereHas('lead', fn ($query) => $query->where('company_id', $company->id))
+                ->first();
+
+            if ($message?->lead) {
+                return $message->lead;
+            }
+        }
+
+        // 2. Try to find lead by reference in subject (e.g. "Re: Lead #LD-3-XXXX")
         if ($email->subject && preg_match('/#(LD-\d+-[A-Z0-9]+)/', $email->subject, $matches)) {
             $lead = Leads::where('company_id', $company->id)
                 ->where('reference', $matches[1])
@@ -170,7 +295,7 @@ class FetchTenantInboundMail implements ShouldQueue
             }
         }
 
-        // 2. Find or create client by from_address
+        // 3. Find or create client by from_address
         $client = Clients::where('company_id', $company->id)
             ->where('email', $email->from_address)
             ->first();
@@ -184,9 +309,10 @@ class FetchTenantInboundMail implements ShouldQueue
             ]);
         }
 
-        // 3. Find open lead or create a new one
+        // 4. Find open lead or create a new one
         $lead = Leads::where('company_id', $company->id)
             ->where('client_id', $client->id)
+            ->when($team, fn ($query) => $query->where('team_id', $team->id))
             ->whereNotIn('status', ['won', 'lost'])
             ->latest()
             ->first();
@@ -195,10 +321,11 @@ class FetchTenantInboundMail implements ShouldQueue
             $lead = Leads::create([
                 'client_id'  => $client->id,
                 'company_id' => $company->id,
+                'team_id'    => $team?->id,
                 'reference'  => 'LD-' . $company->id . '-' . strtoupper(Str::random(8)),
-                'title'      => $email->subject ?: 'Email de ' . $email->from_address,
+                'title'      => $email->subject ?: 'Email para ' . ($team?->name ?? $email->to_address ?? $email->from_address),
                 'status'     => 'new',
-                'source'     => 'email',
+                'source'     => $team ? 'email_team:' . $team->email_alias : 'email',
             ]);
         }
 
@@ -219,16 +346,45 @@ class FetchTenantInboundMail implements ShouldQueue
             if (preg_match('/^(On .+wrote:|.+escreveu.+:)\s*$/i', rtrim($line))) {
                 break;
             }
+            if (preg_match('/^(De|From|Para|To|Data|Date|Assunto|Subject):\s*/i', rtrim($line))) {
+                break;
+            }
             $result[] = $line;
         }
 
         return trim(implode("\n", $result));
     }
 
-    private function aliasBucket(string $alias): string
+    private function aliasBucket(Companies $company, string $alias): string
     {
+        if ($this->teamForAlias($company, $alias)) {
+            return $alias;
+        }
+
         $allowed = (array) config('services.mail_tenant.aliases');
         return in_array($alias, $allowed, true) ? $alias : 'catchall';
+    }
+
+    private function teamForAlias(Companies $company, ?string $alias): ?Team
+    {
+        if (! $alias) {
+            return null;
+        }
+
+        return Team::where('company_id', $company->id)
+            ->where('email_alias', $alias)
+            ->first();
+    }
+
+    private function teamForInboundEmail(Companies $company, InboundEmail $email): ?Team
+    {
+        $team = $this->teamForAlias($company, $email->alias);
+
+        if ($team || ! $email->to_address) {
+            return $team;
+        }
+
+        return $this->teamForAlias($company, strtolower(strtok($email->to_address, '@')));
     }
 
     private function addressFromList(array $list): ?string

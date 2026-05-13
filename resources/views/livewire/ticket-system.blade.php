@@ -154,7 +154,7 @@
                         <div class="space-y-4">
 
                             {{-- Send message card --}}
-                            <div class="bg-white rounded-lg border border-gray-200 p-5">
+                            <div class="bg-white rounded-lg border border-gray-200 p-5 @if(!$hasChatAccess) blur-sm pointer-events-none select-none @endif overflow-y-auto max-h-[420px] p-4 space-y-3">
                                 <h3 class="text-base font-semibold text-gray-800 mb-3">Enviar mensagem</h3>
 
                                 @if(session('error'))

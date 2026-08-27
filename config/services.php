@@ -59,4 +59,10 @@ return [
         'dmarc_policy'   => env('MAIL_TENANT_DMARC', 'v=DMARC1; p=quarantine; rua=mailto:postmaster@khuma.store'),
     ],
 
+    'uazapi' => [
+        'base_url' => env('UAZAPI_BASE_URL', 'https://free.uazapi.com'),
+        'admin_token' => env('UAZAPI_ADMIN_TOKEN'),
+        'timeout' => env('UAZAPI_REQUEST_TIMEOUT', 30),
+    ],
+
 ];

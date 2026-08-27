@@ -32,11 +32,11 @@ Transformar a `Lead_dev` numa base segura e previsível para o produto Khuma: CR
 
 ## Sequência recomendada
 
-1. **Em paralelo:** eu executo R-01 e Jair executa J-01.
-2. Jair conclui J-02 e J-03; eu reviso cada PR antes de merge.
-3. Jair avança para J-04. Em paralelo, eu concluo R-02 e R-03, que produzem as decisões necessárias para planos e WhatsApp.
-4. Depois da definição comercial, eu executo R-04 e aprovo o desenho de email de R-05.
-5. Jair implementa J-05; apenas então iniciamos J-06 e a configuração externa controlada de R-05.
+1. **Em paralelo:** o responsável técnico executa R-01 e Jair executa J-01.
+2. Jair conclui J-02 e J-03; o responsável técnico revê cada PR antes do merge.
+3. Jair avança para J-04. Em paralelo, o responsável técnico conclui R-02 e R-03, que produzem as decisões necessárias para planos e WhatsApp.
+4. Depois da definição comercial, o responsável técnico executa R-04 e aprova o desenho de email de R-05.
+5. Jair implementa J-05; depois iniciam-se J-06 e a configuração externa controlada de R-05.
 
 ---
 
@@ -198,7 +198,7 @@ Estas tarefas foram escolhidas por serem verificáveis, reversíveis e terem fro
 
 ## Tarefas do responsável técnico
 
-Estas tarefas ficam comigo porque envolvem incident response, escolha de fornecedor/arquitectura, dinheiro, políticas externas, produção ou credenciais. Jair pode ajudar com investigação ou testes apenas após uma divisão específica.
+Estas tarefas pertencem ao responsável técnico porque envolvem incident response, escolha de fornecedor/arquitectura, dinheiro, políticas externas, produção ou credenciais. Jair pode ajudar com investigação ou testes apenas após uma divisão específica.
 
 ### R-01 — Resposta a segredos expostos e auditoria da integração actual
 
@@ -295,5 +295,5 @@ Estas tarefas ficam comigo porque envolvem incident response, escolha de fornece
 
 ## Primeira distribuição prática
 
-**Jair inicia J-01.** Assim terá uma entrega curta, compreenderá a estrutura Laravel e deixará uma base segura para os próximos testes.
-**Eu inicio R-01.** Nenhuma tarefa de WhatsApp/email com credenciais ou envio externo deve avançar antes da auditoria e rotação dos segredos.
+**Jair inicia J-01.** A tarefa entrega uma base segura para os próximos testes e introduz a estrutura Laravel de forma delimitada.
+**O responsável técnico inicia R-01.** Nenhuma tarefa de WhatsApp/email com credenciais ou envio externo deve avançar antes da auditoria e rotação dos segredos.

@@ -10,6 +10,8 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -50,9 +52,54 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    public function subscription()
+    public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class);
+    }
+
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class, 'user_id')
+            ->where('status', 'active')
+            ->where('renews_at', '>', now());
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->currentSubscription()?->isActive() ?? false;
+    }
+
+    public function hasFeature(string $featureKey): bool
+    {
+        if (method_exists($this, 'hasRole') && $this->hasRole('admin')) {
+            return true;
+        }
+
+        $subscription = $this->currentSubscription();
+
+        return $subscription?->plan?->hasFeature($featureKey) ?? false;
+    }
+
+    public function featureLimit(string $featureKey, mixed $default = null): mixed
+    {
+        $subscription = $this->currentSubscription();
+
+        return $subscription?->plan?->featureLimit($featureKey, $default) ?? $default;
+    }
+
+    public function currentSubscription(): ?Subscription
+    {
+        if ($this->company_id) {
+            return Subscription::with('plan.features')
+                ->where('company_id', $this->company_id)
+                ->latest()
+                ->first();
+        }
+
+        return $this->subscription()
+            ->with('plan.features')
+            ->latest()
+            ->first();
     }
 
     public function company(): BelongsTo

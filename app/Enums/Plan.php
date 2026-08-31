@@ -4,9 +4,9 @@ namespace App\Enums;
 
 enum Plan : string
 {
-    case UBUNTU = 'khuma_ubuntu';
-    case BAOBA = 'khuma_baoba';
-    case LION = 'huma_leao';
+    case UBUNTU = 'ubuntu';
+    case BAOBA = 'baoba';
+    case LION = 'leao';
 
     public function label(): string
     {

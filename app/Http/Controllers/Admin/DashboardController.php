@@ -3,78 +3,91 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\CallLog;
+use App\Models\Clients;
+use App\Models\EmailCampaign;
 use App\Models\Leads;
+use App\Models\Messages;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Response;
 
 class DashboardController extends Controller
 {
     public function dashboard()
     {
-        $user = Auth::user();
+        $user      = Auth::user();
+        $companyId = $user->company_id;
 
-        // 🔹 chamadas recentes (5 últimas)
-        $recentCalls = CallLog::query()
-            ->when(!$user->hasRole('admin'), function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
+        $leadsQuery = Leads::where('company_id', $companyId);
+
+        $total          = (clone $leadsQuery)->count();
+        $totalNew       = (clone $leadsQuery)->where('status', 'new')->count();
+        $totalContacted = (clone $leadsQuery)->where('status', 'contacted')->count();
+        $totalQualified = (clone $leadsQuery)->where('status', 'qualified')->count();
+        $totalProposal  = (clone $leadsQuery)->where('status', 'proposal')->count();
+        $totalNeg       = (clone $leadsQuery)->where('status', 'negotiation')->count();
+        $totalWon       = (clone $leadsQuery)->where('status', 'won')->count();
+        $totalLost      = (clone $leadsQuery)->where('status', 'lost')->count();
+        $totalClients   = Clients::where('company_id', $companyId)->count();
+        $totalCampaigns = EmailCampaign::where('company_id', $companyId)->count();
+        $totalMessages  = Messages::whereHas('lead', fn ($q) => $q->where('company_id', $companyId))->count();
+
+        $recentLeads = Leads::with('client')
+            ->where('company_id', $companyId)
             ->latest()
-            ->take(5)
+            ->take(8)
             ->get();
 
-        if ($user->hasRole('admin')) {
-            // Estatísticas globais
-            $totalCalls = CallLog::count();
-            $totalDuration = CallLog::sum('duration_seconds');
-            $missedCalls = CallLog::where('type', 'MISSED')->count();
-            $avgDuration = CallLog::avg('duration_seconds');
+        $pipeline = [
+            'new'         => $totalNew,
+            'contacted'   => $totalContacted,
+            'qualified'   => $totalQualified,
+            'proposal'    => $totalProposal,
+            'negotiation' => $totalNeg,
+            'won'         => $totalWon,
+            'lost'        => $totalLost,
+        ];
 
-            return view('dashboard', [
-                'role' => 'admin',
-                'totalCalls' => $totalCalls,
-                'totalDuration' => $totalDuration,
-                'missedCalls' => $missedCalls,
-                'avgDuration' => $avgDuration,
-                'recentCalls' => $recentCalls,
+        $conversionRate = $total > 0 ? round(($totalWon / $total) * 100, 1) : 0;
+
+        return view('dashboard', compact(
+            'total', 'totalNew', 'totalWon', 'totalLost',
+            'totalClients', 'totalCampaigns', 'totalMessages',
+            'pipeline', 'recentLeads', 'conversionRate',
+        ));
+    }
+
+    public function downloadReport()
+    {
+        $user      = Auth::user();
+        $companyId = $user->company_id;
+
+        $leads = Leads::with('client')
+            ->where('company_id', $companyId)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $rows   = [];
+        $rows[] = implode(',', ['ID', 'Referência', 'Título', 'Cliente', 'Estado', 'Valor', 'Fonte', 'Data']);
+
+        foreach ($leads as $lead) {
+            $rows[] = implode(',', [
+                $lead->id,
+                $lead->reference,
+                '"' . str_replace('"', '""', $lead->title) . '"',
+                '"' . str_replace('"', '""', optional($lead->client)->name ?? '') . '"',
+                $lead->status,
+                $lead->value ?? 0,
+                $lead->source ?? '',
+                $lead->created_at->format('d/m/Y'),
             ]);
         }
 
-        if ($user->hasRole('subscriber') || $user->hasRole('salesperson')) {
-            $subscription = $user->subscription; // relação User->Subscription
-            $plan = $subscription?->plan ?? 'kuma_essencial';
+        $csv      = implode("\n", $rows);
+        $filename = 'leads-report-' . now()->format('Y-m-d') . '.csv';
 
-            $query = CallLog::where('user_id', $user->id);
-
-            // Essencial = últimas 3 meses
-            if ($plan === 'kuma_essencial') {
-                $query->where('created_at', '>=', now()->subMonths(3));
-            }
-
-            $totalCalls = $query->count();
-            $totalDuration = $query->sum('duration_seconds');
-            $missedCalls = $query->where('type', 'MISSED')->count();
-            $avgDuration = $query->avg('duration_seconds');
-
-            $leads = Leads::where('company_id', $user->company_id);
-
-            $total_leads = $leads->count();
-            $total_new_leads = $leads->where('status','new')->count();
-            $total_lost_leads = $leads->where('status','lost')->count();
-            $total_won_leads = $leads->where('status','won')->count();
-
-            return view('dashboard', [
-                'role' => 'subscriber',
-                'plan' => $plan,
-                'totalCalls' => $totalCalls,
-                'totalDuration' => $totalDuration,
-                'missedCalls' => $missedCalls,
-                'avgDuration' => $avgDuration,
-                'recentCalls' => $recentCalls,
-                'total_leads' => $total_leads,
-                'total_new_leads' => $total_new_leads,
-                'total_lost_leads' => $total_lost_leads,
-                'total_won_leads' => $total_won_leads,
-            ]);
-        }
+        return Response::make($csv, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => "attachment; filename={$filename}",
+        ]);
     }
 }

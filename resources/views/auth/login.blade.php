@@ -1,4 +1,9 @@
 <x-guest-layout>
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold tracking-tight text-slate-950">Entrar</h2>
+        <p class="mt-1 text-sm text-slate-500">Acesse o seu CRM e acompanhe vendas, equipa e subscrição.</p>
+    </div>
+
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
@@ -32,16 +37,19 @@
             </label>
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
+                <a class="text-sm font-medium text-slate-500 hover:text-[#2c6fad]" href="{{ route('password.request') }}">
                     {{ __('Esqueceu a sua palavra-passe?') }}
                 </a>
             @endif
 
-            <x-primary-button class="ms-3">
-                {{ __('Iniciar sessão') }}
-            </x-primary-button>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('register') }}" class="text-sm font-semibold text-[#2c6fad] hover:text-[#245b8e]">Criar conta</a>
+                <x-primary-button class="bg-[#2c6fad] px-5 py-2.5 hover:bg-[#245b8e]">
+                    {{ __('Iniciar sessão') }}
+                </x-primary-button>
+            </div>
         </div>
     </form>
 </x-guest-layout>

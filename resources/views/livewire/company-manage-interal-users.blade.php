@@ -14,6 +14,12 @@
                     + Novo Utilizador
                 </button>
                 </div>
+                @error('members_limit')
+                    <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                        {{ $message }}
+                        <a href="{{ route('subscription.plans') }}" class="ml-2 text-[#2c6fad] underline">Atualizar plano</a>
+                    </div>
+                @enderror
                 <div class="overflow-x-auto">
 
                     <table class="w-full border border-gray-200 rounded-lg divide-y divide-gray-200">

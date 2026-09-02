@@ -9,7 +9,6 @@ use Illuminate\Validation\Rule;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
-use function Laravel\Prompts\password;
 
 class CompanyManageInteralUsers extends Component
 {
@@ -23,7 +22,7 @@ class CompanyManageInteralUsers extends Component
     public $name;
     public $email;
     public $phone;
-    public $role;
+    public $role = Role::CLIENT_EMPLOYEE->value;
 
     protected $paginationTheme = 'tailwind';
 
@@ -47,6 +46,12 @@ class CompanyManageInteralUsers extends Component
 
     public function openModal()
     {
+        if (! $this->canAddCompanyUser()) {
+            $this->addError('members_limit', 'O limite de membros do plano foi atingido. Atualize a subscrição para adicionar mais utilizadores.');
+
+            return;
+        }
+
         $this->resetForm();
         $this->showModal = true;
     }
@@ -61,12 +66,20 @@ class CompanyManageInteralUsers extends Component
         $this->name = '';
         $this->email = '';
         $this->phone = '';
+        $this->role = Role::CLIENT_EMPLOYEE->value;
     }
 
     public function save()
     {
         $this->validate();
         $company_id = auth()->user()->company_id;
+
+        if (! $this->canAddCompanyUser()) {
+            $this->addError('members_limit', 'O limite de membros do plano foi atingido. Atualize a subscrição para adicionar mais utilizadores.');
+
+            return;
+        }
+
         $salesRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => $this->role]);
 
         $user = User::create([
@@ -97,5 +110,17 @@ class CompanyManageInteralUsers extends Component
             ->paginate(10);
 
         return view('livewire.company-manage-interal-users', compact('users'));
+    }
+
+    private function canAddCompanyUser(): bool
+    {
+        $user = auth()->user();
+        $limit = $user->featureLimit('members', null);
+
+        if ($limit === null || $limit === 'unlimited') {
+            return true;
+        }
+
+        return User::where('company_id', $user->company_id)->count() < (int) $limit;
     }
 }

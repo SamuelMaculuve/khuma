@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             InitialSeeder::class,
             CompanyClientUserSeeder::class,
             PlanSeeder::class,
+            EmailTemplateSeeder::class,
         ]);
     }
 }

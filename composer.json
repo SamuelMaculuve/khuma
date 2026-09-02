@@ -12,6 +12,7 @@
         "laravel/tinker": "^2.9",
         "livewire/livewire": "^3.6",
         "spatie/laravel-permission": "^6.21",
+        "webklex/laravel-imap": "^6.2",
         "yajra/laravel-datatables-oracle": "^11.0"
     },
     "require-dev": {

@@ -11,7 +11,7 @@ class Messages extends Model
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Leads::class);
+        return $this->belongsTo(Leads::class, 'lead_id');
     }
 
     public function sender(): BelongsTo
@@ -30,6 +30,6 @@ class Messages extends Model
 
     public function client()
     {
-        return $this->belongsTo(Clients::class);
+        return $this->belongsTo(Clients::class, 'client_id');
     }
 }

@@ -7,59 +7,73 @@ use Illuminate\Http\Request;
 
 class LeadsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $companyId = (int) auth()->user()->company_id;
+
+        return view('admin.whatsapp.index', [
+            'leads' => Leads::forCompany($companyId)
+                ->with(['client', 'team'])
+                ->latest()
+                ->get(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        abort_unless(auth()->user()->company_id, 403);
+
+        return view('admin.whatsapp.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        abort_unless(auth()->user()->company_id, 403);
+
+        // Lead creation is currently handled by the Kanban Livewire flow.
+        abort(405);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Leads $lead)
     {
-        return view('admin.whatsapp.show',compact('lead'));
+        // Route model binding resolves by global ID. Re-scope it to the
+        // authenticated tenant before rendering anything from the record.
+        $lead = Leads::forCompany((int) auth()->user()->company_id)
+            ->with(['client', 'team'])
+            ->findOrFail($lead->getKey());
+
+        $this->authorize('view', $lead);
+
+        return view('admin.whatsapp.show', compact('lead'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Leads $leads)
+    public function edit(Leads $lead)
     {
-        //
+        $lead = Leads::forCompany((int) auth()->user()->company_id)
+            ->findOrFail($lead->getKey());
+
+        $this->authorize('update', $lead);
+
+        abort(405);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Leads $leads)
+    public function update(Request $request, Leads $lead)
     {
-        //
+        $lead = Leads::forCompany((int) auth()->user()->company_id)
+            ->findOrFail($lead->getKey());
+
+        $this->authorize('update', $lead);
+
+        abort(405);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Leads $leads)
+    public function destroy(Leads $lead)
     {
-        //
+        $lead = Leads::forCompany((int) auth()->user()->company_id)
+            ->findOrFail($lead->getKey());
+
+        $this->authorize('delete', $lead);
+
+        abort(405);
     }
 }

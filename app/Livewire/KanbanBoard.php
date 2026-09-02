@@ -8,6 +8,7 @@ use App\Models\Messages;
 use App\Models\Team;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class KanbanBoard extends Component
@@ -59,7 +60,12 @@ class KanbanBoard extends Component
             'lead_value'               => ['nullable', 'numeric', 'min:0'],
             'lead_expected_close_date' => ['nullable', 'date'],
             'lead_source'              => ['nullable', 'string', 'max:255'],
-            'lead_team_id'             => ['nullable', 'exists:teams,id'],
+            'lead_team_id'             => [
+                'nullable',
+                Rule::exists('teams', 'id')->where(
+                    fn ($query) => $query->where('company_id', auth()->user()->company_id)
+                ),
+            ],
             'leadStatus'               => ['required', 'string'],
         ];
 
@@ -68,7 +74,12 @@ class KanbanBoard extends Component
             $rules['new_client_email'] = ['nullable', 'email', 'max:255'];
             $rules['new_client_phone'] = ['nullable', 'string', 'max:50'];
         } else {
-            $rules['lead_client_id']   = ['required', 'exists:clients,id'];
+            $rules['lead_client_id'] = [
+                'required',
+                Rule::exists('clients', 'id')->where(
+                    fn ($query) => $query->where('company_id', auth()->user()->company_id)
+                ),
+            ];
         }
 
         return $rules;
@@ -100,30 +111,19 @@ class KanbanBoard extends Component
             return;
         }
 
-        // Encontrar o item no estado de origem
-        $itemIndex = null;
-        $itemToMove = null;
+        $companyId = (int) auth()->user()->company_id;
 
-        foreach ($this->states[$fromState] as $index => $item) {
-            if ($item['id'] == $itemId) {
-                $itemIndex = $index;
-                $itemToMove = $item;
-                $itemToMove['status'] = $toState;
-                break;
-            }
+        // Do not trust the ID/state payload sent by the browser. Re-resolve
+        // the lead inside the authenticated tenant before changing anything.
+        $lead = Leads::forCompany($companyId)->find($itemId);
+
+        if (!$lead || $lead->status !== $fromState) {
+            return;
         }
 
-        if ($itemToMove !== null) {
-            Leads::where('company_id', auth()->user()->company_id)
-                ->whereKey($itemId)
-                ->update(['status' => $toState]);
+        $lead->update(['status' => $toState]);
 
-            // Remover do estado de origem
-            array_splice($this->states[$fromState], $itemIndex, 1);
-
-            // Adicionar ao estado de destino
-            $this->states[$toState][] = $itemToMove;
-        }
+        $this->loadLeads();
     }
 
     public function openLeadForm(string $stateName): void
@@ -136,8 +136,15 @@ class KanbanBoard extends Component
 
         $this->resetLeadForm();
         $this->leadStatus = $stateName;
-        $this->lead_team_id = $this->selectedTeamId !== 'all' ? (int) $this->selectedTeamId : null;
-        $this->availableClients = Clients::where('company_id', $companyId)
+        $this->lead_team_id = null;
+        if ($this->selectedTeamId !== 'all') {
+            $teamId = (int) $this->selectedTeamId;
+            if (Team::forCompany((int) $companyId)->whereKey($teamId)->exists()) {
+                $this->lead_team_id = $teamId;
+            }
+        }
+
+        $this->availableClients = Clients::forCompany((int) $companyId)
             ->orderBy('name')
             ->get(['id', 'name'])
             ->toArray();
@@ -178,12 +185,19 @@ class KanbanBoard extends Component
             ]);
             $clientId = $client->id;
 
-            $this->availableClients = Clients::where('company_id', $companyId)
+            $this->availableClients = Clients::forCompany((int) $companyId)
                 ->orderBy('name')
                 ->get(['id', 'name'])
                 ->toArray();
         } else {
-            $clientId = $data['lead_client_id'];
+            // Resolve the selected client through the current tenant, rather
+            // than trusting a global client ID from the browser.
+            $client = Clients::forCompany((int) $companyId)->findOrFail($data['lead_client_id']);
+            $clientId = $client->id;
+        }
+
+        if (!empty($data['lead_team_id'])) {
+            Team::forCompany((int) $companyId)->findOrFail((int) $data['lead_team_id']);
         }
 
         $lead = Leads::create([
@@ -203,7 +217,7 @@ class KanbanBoard extends Component
         if (array_key_exists($lead->status, $this->states)) {
             $clientName = $this->creatingNewClient
                 ? ($data['new_client_name'] ?? '')
-                : (Clients::find($clientId)?->name ?? '');
+                : (Clients::forCompany((int) $companyId)->find($clientId)?->name ?? '');
 
             $this->states[$lead->status][] = [
                 'id'          => $lead->id,
@@ -316,7 +330,7 @@ class KanbanBoard extends Component
 
     public function mount()
     {
-        $this->availableTeams = Team::where('company_id', auth()->user()->company_id)
+        $this->availableTeams = Team::forCompany((int) auth()->user()->company_id)
             ->orderBy('name')
             ->get(['id', 'name'])
             ->toArray();
@@ -328,11 +342,24 @@ class KanbanBoard extends Component
     {
         $this->resetStates();
 
-        $leads = Leads::with(['client', 'team'])
-            ->where('company_id', auth()->user()->company_id)
-            ->when($this->selectedTeamId !== 'all', fn ($query) => $query->where('team_id', (int) $this->selectedTeamId))
-            ->get();
+        $companyId = (int) auth()->user()->company_id;
 
+        $leads = Leads::with([
+                'client' => fn ($query) => $query->where('company_id', $companyId),
+                'team' => fn ($query) => $query->where('company_id', $companyId),
+            ])
+            ->forCompany($companyId)
+            ->when($this->selectedTeamId !== 'all', function ($query) use ($companyId) {
+                $teamId = (int) $this->selectedTeamId;
+
+                if (! Team::forCompany($companyId)->whereKey($teamId)->exists()) {
+                    $this->selectedTeamId = 'all';
+                    return;
+                }
+
+                $query->where('team_id', $teamId);
+            })
+            ->get();
         foreach ($leads as $lead) {
             if (! array_key_exists($lead->status, $this->states)) {
                 continue;

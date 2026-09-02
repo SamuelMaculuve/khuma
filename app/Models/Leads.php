@@ -7,6 +7,7 @@ use App\Models\Companies;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class Leads extends Model
 {
@@ -14,6 +15,15 @@ class Leads extends Model
 
     protected $table = 'leads';
     protected $guarded = [];
+
+    /**
+     * Restrict queries to a tenant/company. Never use a browser-supplied
+     * resource ID without composing this scope in tenant-facing flows.
+     */
+    public function scopeForCompany(Builder $query, int $companyId): Builder
+    {
+        return $query->where($this->getTable() . '.company_id', $companyId);
+    }
 
     public function client(): BelongsTo
     {

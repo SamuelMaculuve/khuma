@@ -5,10 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Builder;
 
 class Team extends Model
 {
     protected $guarded = [];
+
+    public function scopeForCompany(Builder $query, int $companyId): Builder
+    {
+        return $query->where($this->getTable() . '.company_id', $companyId);
+    }
 
     public function company(): BelongsTo
     {

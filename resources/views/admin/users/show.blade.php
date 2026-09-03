@@ -43,15 +43,14 @@
                                 <!-- Plano -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-600">Plano de Subscrição</label>
-                                    <select name="plan"
+                                    <select name="plan_id"
                                             class="mt-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="">-- Nenhum --</option>
-                                        <option value="kuma_essencial" @selected(optional($user->subscription)->plan=='kuma_essencial')>
-                                            Kuma Essencial
-                                        </option>
-                                        <option value="kuma_premium" @selected(optional($user->subscription)->plan=='kuma_premium')>
-                                            Kuma Premium
-                                        </option>
+                                        @foreach($plans as $plan)
+                                            <option value="{{ $plan->id }}" @selected(optional($user->subscription)->plan_id === $plan->id)>
+                                                {{ $plan->name }}
+                                            </option>
+                                        @endforeach
                                     </select>
                                 </div>
 
@@ -59,14 +58,14 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-600">Início</label>
-                                        <input type="date" name="start_date"
-                                               value="{{ optional($user->subscription)->start_date }}"
+                                        <input type="date" name="started_at"
+                                               value="{{ optional(optional($user->subscription)->started_at)->format('Y-m-d') }}"
                                                class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-600">Fim</label>
-                                        <input type="date" name="end_date"
-                                               value="{{ optional($user->subscription)->end_date }}"
+                                        <input type="date" name="renews_at"
+                                               value="{{ optional(optional($user->subscription)->renews_at)->format('Y-m-d') }}"
                                                class="mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     </div>
                                 </div>

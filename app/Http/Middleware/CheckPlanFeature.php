@@ -15,14 +15,24 @@ class CheckPlanFeature
      */
     public function handle(Request $request, Closure $next, string $featureKey): Response
     {
-        $user = auth()->user();
+        $user = $request->user();
 
-        if (!$user || !$user->subscription) {
+        if (!$user) {
             abort(403);
         }
 
-        if (!$user->subscription->plan->hasFeature($featureKey)) {
-            abort(403, 'Funcionalidade indisponível no seu plano');
+        if (method_exists($user, 'hasRole') && $user->hasRole('admin')) {
+            return $next($request);
+        }
+
+        if (!$user->hasActiveSubscription()) {
+            return redirect()
+                ->route('subscription.plans')
+                ->with('warning', 'Escolha uma subscrição para desbloquear os módulos do Khuma CRM.');
+        }
+
+        if (!$user->hasFeature($featureKey)) {
+            abort(403, 'Funcionalidade indisponível no seu plano.');
         }
 
         return $next($request);

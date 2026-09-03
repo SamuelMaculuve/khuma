@@ -35,4 +35,28 @@ return [
         ],
     ],
 
+    'mailcow' => [
+        'url'     => env('MAILCOW_API_URL'),
+        'api_key' => env('MAILCOW_API_KEY'),
+        'verify'  => env('MAILCOW_VERIFY_TLS', true),
+        'smtp_host' => env('MAILCOW_SMTP_HOST', env('MAIL_HOST')),
+        'smtp_port' => env('MAILCOW_SMTP_PORT', 587),
+        'imap_host' => env('MAILCOW_IMAP_HOST', env('MAIL_HOST')),
+        'imap_port' => env('MAILCOW_IMAP_PORT', 993),
+    ],
+
+    'cloudflare' => [
+        'api_token' => env('CLOUDFLARE_API_TOKEN'),
+        'zone_id'   => env('CLOUDFLARE_ZONE_ID'),
+    ],
+
+    'mail_tenant' => [
+        'parent_domain'  => env('MAIL_PARENT_DOMAIN', 'khuma.store'),
+        'mail_host'      => env('MAILCOW_SMTP_HOST', env('MAIL_HOST', 'mail.khuma.store')),
+        'aliases'        => ['catchall', 'bounce', 'commercial', 'campaign'],
+        'inbox_local'    => env('MAIL_TENANT_INBOX', 'inbox'),
+        'spf'            => env('MAIL_TENANT_SPF', 'v=spf1 mx ~all'),
+        'dmarc_policy'   => env('MAIL_TENANT_DMARC', 'v=DMARC1; p=quarantine; rua=mailto:postmaster@khuma.store'),
+    ],
+
 ];

@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Subscription;
 
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 use App\Models\Plan;
 use Illuminate\Support\Facades\Auth;
 
 
+#[Layout('layouts.app')]
 class Checkout extends Component
 {
     public Plan $plan;

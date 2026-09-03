@@ -1,220 +1,106 @@
-<div>
-    <x-app-layout>
-        <x-slot name="header">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Escolha o seu plano e clique em continuar abaixo') }}
-            </h2>
-
-            <div class="max-w-6xl mx-auto py-10">
-
-
-                <div class="grid md:grid-cols-3 gap-6">
-                    @foreach ($plans as $plan)
-                        {{-- <div class="border rounded-xl p-6 shadow-sm hover:shadow-lg transition"
-                            :class="{ 'ring-2 ring-indigo-600': {{ $selectedPlanId == $plan->id ? 'true' : 'false' }} }">
-
-                            <h2 class="text-xl font-semibold mb-2">{{ $plan->name }}</h2>
-
-                            <ul class="text-sm text-gray-600 space-y-1 mb-4">
-                                @foreach ($plan->features as $feature)
-                                    <li>• {{ ucfirst(str_replace('_', ' ', $feature->feature_key)) }}:
-                                        {{ $feature->feature_value }}</li>
-                                @endforeach
-                            </ul>
-
-                            <button wire:click="selectPlan({{ $plan->id }})"
-                                class="w-full py-2 rounded-lg border border-indigo-600 text-indigo-600 hover:bg-indigo-50">
-                                Selecionar
-                            </button>
-                        </div> --}}
-                        @if ($plan->code == 'ubuntu')
-                            <div class="pricing-card bg-white p-8 rounded-2xl shadow-soft flex flex-col h-full"
-                                :class="{ 'popular': {{ $selectedPlanId == $plan->id ? 'true' : 'false' }} }">
-                                <div class="mb-8">
-                                    <div class="flex items-center mb-4">
-                                        <div
-                                            class="w-12 h-12 bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl flex items-center justify-center mr-4">
-                                            <i class="fas fa-seedling text-gray-600 text-xl"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="text-2xl font-bold text-gray-900">{{ $plan->name }}</h3>
-                                            <p class="text-sm text-gray-500">Pequenos negócios</p>
-                                        </div>
-                                    </div>
-                                    <div class="text-4xl font-bold text-gray-900 mb-2">{{ number_format($plan->currentPrice()->amount, 2) }}<span
-                                            class="text-sm font-normal text-gray-500"> MZN/mês + IVA</span></div>
-                                    <span class="text-sm font-normal text-red-500"> Antes <del>3.000</del>
-                                        <small>MZN/mês</small></span>
-                                    <p class="text-gray-600">Ideal para quem está começando com automação no WhatsApp.
-                                    </p>
-                                </div>
-
-                                <ul class="mb-8 space-y-4 flex-grow">
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>2 Membros da equipa</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>500 linhas no fluxo do chatbot</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>1 instância WhatsApp (QR Code)</span>
-                                    </li>
-                                    <li class="flex items-start text-gray-400">
-                                        <i class="fas fa-times mt-1 mr-3"></i>
-                                        <span>Venda de produtos/serviços</span>
-                                    </li>
-                                    <li class="flex items-start text-gray-400">
-                                        <i class="fas fa-times mt-1 mr-3"></i>
-                                        <span>Mensagens em massa</span>
-                                    </li>
-                                </ul>
-
-                                <button wire:click="selectPlan({{ $plan->id }})"
-                                    class="bg-gradient-to-r from-primary to-secondary text-white text-center py-4 rounded-xl font-semibold hover:opacity-90 transition shadow-md">Escolher
-                                    UBUNTU</button>
-                            </div>
-                        @endif
-                        @if ($plan->code == 'baoba')
-                            <div class="pricing-card bg-white p-8 rounded-2xl shadow-card flex flex-col h-full"
-                                :class="{ 'popular': {{ $selectedPlanId == $plan->id ? 'true' : 'false' }} }">
-                                <div class="mb-8">
-                                    <div class="flex items-center mb-4">
-                                        <div
-                                            class="w-12 h-12 bg-gradient-to-r from-green-100 to-green-50 rounded-xl flex items-center justify-center mr-4">
-                                            <i class="fas fa-tree text-primary text-xl"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="text-2xl font-bold text-gray-900">{{ $plan->name }}</h3>
-                                            <p class="text-sm text-gray-500">Empresas em crescimento</p>
-                                        </div>
-                                    </div>
-                                    <div class="text-4xl font-bold text-gray-900 mb-2">{{ number_format($plan->currentPrice()->amount, 2) }}<span
-                                            class="text-sm font-normal text-gray-500"> MZN/mês + IVA</span></div>
-                                    <p class="text-gray-600">Perfeito para empresas que querem escalar vendas pelo
-                                        WhatsApp.
-                                    </p>
-                                </div>
-
-                                <ul class="mb-8 space-y-4 flex-grow">
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span><strong>Tudo do UBUNTU +</strong></span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>5 Membros da equipa</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>1.500 linhas no fluxo do chatbot</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Venda de produtos/serviços ✅</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Múltiplos métodos de pagamento</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Integração Google Sheets</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>2 instâncias WhatsApp</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Mensagens em massa</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Suporte básico</span>
-                                    </li>
-                                </ul>
-
-                                <button wire:click="selectPlan({{ $plan->id }})"
-                                    class="bg-gradient-to-r from-primary to-secondary text-white text-center py-4 rounded-xl font-semibold hover:opacity-90 transition shadow-md">Escolher
-                                    BAOBÁ</button>
-                            </div>
-                        @endif
-                        @if ($plan->code == 'leao')
-                            <div class="pricing-card bg-white p-8 rounded-2xl shadow-soft flex flex-col h-full">
-                                <div class="mb-8">
-                                    <div class="flex items-center mb-4">
-                                        <div
-                                            class="w-12 h-12 bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-xl flex items-center justify-center mr-4">
-                                            <i class="fas fa-crown text-yellow-600 text-xl"></i>
-                                        </div>
-                                        <div>
-                                            <h3 class="text-2xl font-bold text-gray-900">{{ $plan->name }}</h3>
-                                            <p class="text-sm text-gray-500">Empresas estabelecidas</p>
-                                        </div>
-                                    </div>
-                                    <div class="text-4xl font-bold text-gray-900 mb-2">Personalizado</div>
-                                    <p class="text-gray-600">Solução enterprise com recursos avançados e suporte
-                                        prioritário.</p>
-                                </div>
-
-                                <ul class="mb-8 space-y-4 flex-grow">
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span><strong>Tudo do BAOBÁ +</strong></span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Membros ilimitados</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Fluxo do chatbot ilimitado</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Instâncias WhatsApp customizáveis</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>WhatsApp Templates API</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Formulários WhatsApp</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Suporte prioritário</span>
-                                    </li>
-                                    <li class="flex items-start">
-                                        <i class="fas fa-check text-green-500 mt-1 mr-3"></i>
-                                        <span>Cloud API & QR Code</span>
-                                    </li>
-                                </ul>
-
-                                <a href="#" target="_blank"
-                                    class="bg-gray-900 text-white text-center py-4 rounded-xl font-semibold hover:bg-gray-800 transition">Falar
-                                    com Especialista</a>
-                            </div>
-                        @endif
-                    @endforeach
-                </div>
-
-
-                @if ($selectedPlanId)
-                    <div class="text-center mt-8">
-                        <button wire:click="continue" class="px-6 py-3 bg-indigo-600 text-white rounded-xl">
-                            Continuar para pagamento
-                        </button>
-                    </div>
-                @endif
+<div class="min-h-[calc(100vh-44px)] bg-slate-50">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-[0.18em] text-[#2c6fad]">Planos</p>
+                <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-950">Escolha a subscrição certa</h1>
+                <p class="mt-2 max-w-2xl text-sm text-slate-600">Atualize ou ative o seu plano para desbloquear os módulos certos para a sua equipa.</p>
             </div>
+            <a href="{{ route('subscription.dashboard') }}" class="inline-flex w-fit items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+                <i class="fa-solid fa-arrow-left text-xs"></i>
+                Voltar a subscrição
+            </a>
+        </div>
 
-        </x-slot>
+        @if (session('warning'))
+            <div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                {{ session('warning') }}
+            </div>
+        @endif
 
-    </x-app-layout>
+        @error('selectedPlanId')
+            <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                Escolha um plano para continuar.
+            </div>
+        @enderror
 
+        <div class="grid gap-5 lg:grid-cols-3">
+            @foreach ($plans as $plan)
+                @php
+                    $price = $plan->currentPrice();
+                    $isSelected = $selectedPlanId == $plan->id;
+                    $isPopular = $plan->code === 'baoba';
+                    $highlights = [
+                        'ubuntu' => ['Pequenos negócios', 'fa-seedling', 'bg-slate-100 text-slate-700'],
+                        'baoba' => ['Empresas em crescimento', 'fa-tree', 'bg-blue-100 text-[#2c6fad]'],
+                        'leao' => ['Operações estabelecidas', 'fa-crown', 'bg-amber-100 text-amber-700'],
+                    ][$plan->code] ?? ['Plano Khuma', 'fa-layer-group', 'bg-slate-100 text-slate-700'];
+                @endphp
+
+                <article class="relative flex flex-col rounded-xl border bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl {{ $isSelected ? 'border-[#2c6fad] ring-4 ring-blue-100' : ($isPopular ? 'border-[#2c6fad]' : 'border-slate-200') }}">
+                    @if($isPopular)
+                        <span class="absolute right-5 top-5 rounded-full bg-[#2c6fad] px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">Popular</span>
+                    @endif
+
+                    <div class="mb-6">
+                        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg {{ $highlights[2] }}">
+                            <i class="fa-solid {{ $highlights[1] }}"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-950">{{ $plan->name }}</h2>
+                        <p class="mt-1 text-sm text-slate-500">{{ $highlights[0] }}</p>
+                    </div>
+
+                    <div class="mb-6">
+                        @if($price)
+                            <div class="flex items-end gap-2">
+                                <span class="text-4xl font-bold tracking-tight text-slate-950">{{ number_format($price->amount, 0) }}</span>
+                                <span class="pb-1 text-sm font-semibold text-slate-500">{{ $price->currency }}/mês + IVA</span>
+                            </div>
+                        @else
+                            <span class="text-3xl font-bold tracking-tight text-slate-950">Sob consulta</span>
+                        @endif
+                        <p class="mt-3 text-sm leading-6 text-slate-600">{{ $plan->description }}</p>
+                    </div>
+
+                    <ul class="mb-6 flex-1 space-y-3">
+                        @foreach($plan->features as $feature)
+                            @if($plan->hasFeature($feature->feature_key))
+                                <li class="flex items-start gap-3 text-sm text-slate-700">
+                                    <span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                                        <i class="fa-solid fa-check text-[10px]"></i>
+                                    </span>
+                                    <span>
+                                        <span class="font-medium">{{ $plan->featureLabel($feature->feature_key) ?? str($feature->feature_key)->replace('_', ' ')->title() }}</span>
+                                        @if(!in_array($feature->feature_value, ['1', 'true'], true))
+                                            <span class="text-slate-500">: {{ $feature->feature_value }}</span>
+                                        @endif
+                                    </span>
+                                </li>
+                            @endif
+                        @endforeach
+                    </ul>
+
+                    <button wire:click="selectPlan({{ $plan->id }})"
+                            class="inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-bold transition {{ $isSelected ? 'bg-[#2c6fad] text-white' : 'border border-[#2c6fad] bg-white text-[#2c6fad] hover:bg-blue-50' }}">
+                        <i class="fa-solid {{ $isSelected ? 'fa-circle-check' : 'fa-plus' }} text-xs"></i>
+                        {{ $isSelected ? 'Selecionado' : 'Escolher plano' }}
+                    </button>
+                </article>
+            @endforeach
+        </div>
+
+        <div class="mt-8 flex flex-col-reverse items-center justify-center gap-3 sm:flex-row">
+            <button wire:click="skipForNow" class="rounded-lg px-5 py-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
+                Ignorar por agora
+            </button>
+
+            @if ($selectedPlanId)
+                <button wire:click="continue"
+                        class="inline-flex items-center gap-2 rounded-lg bg-[#2c6fad] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#245b8e]">
+                    Continuar para pagamento
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            @endif
+        </div>
+    </div>
 </div>

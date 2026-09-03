@@ -417,7 +417,7 @@
                                 <p class="text-sm font-medium text-gray-700 mb-3">Filtrar por estado do lead</p>
                                 <p class="text-xs text-gray-500 mb-3">Deixe vazio para enviar a todos os clientes com email.</p>
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                    @foreach(['new' => 'Novo', 'contacted' => 'Contactado', 'qualified' => 'Qualificado', 'proposal' => 'Proposta', 'negotiation' => 'Negociação', 'won' => 'Ganho', 'lost' => 'Perdido'] as $value => $label)
+                                    @foreach(\App\Models\Leads::STATUS_LABELS as $value => $label)
                                         <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer p-2 rounded hover:bg-white">
                                             <input type="checkbox" wire:model.live="filters.lead_status" value="{{ $value }}"
                                                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />

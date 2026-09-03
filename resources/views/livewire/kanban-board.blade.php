@@ -34,10 +34,21 @@
             <option value="{{ $team['id'] }}">{{ $team['name'] }}</option>
         @endforeach
     </select>
+    <select wire:model.live="filterStatus" style="height:32px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;padding:0 10px;background:#fff;color:#444;">
+        <option value="todos">Todos os estados</option>
+        @foreach(\App\Models\Leads::STATUS_LABELS as $value => $label)
+            <option value="{{ $value }}">{{ $label }}</option>
+        @endforeach
+    </select>
     <span style="font-size:12px;color:#888;margin-left:auto;">
         {{ array_sum(array_map('count', $states)) }} leads
     </span>
 </div>
+@if($errors->has('moveItem'))
+    <div style="margin:10px 16px 0;padding:9px 12px;border:1px solid #fecaca;border-radius:6px;background:#fef2f2;color:#b91c1c;font-size:12px;">
+        {{ $errors->first('moveItem') }}
+    </div>
+@endif
 
 {{-- Board --}}
 <div class="kb-board" id="kb-board">
@@ -82,9 +93,7 @@
                         $clientName = $item['client_name'] ?? '';
                         $initials   = strtoupper(substr($clientName ?: $item['title'], 0, 1));
                         $avatarBg   = $avatarColors[$item['id'] % count($avatarColors)];
-                        $searchLower = strtolower($search ?? '');
-                        $hidden = $searchLower && !str_contains(strtolower($item['title']), $searchLower)
-                                               && !str_contains(strtolower($clientName), $searchLower);
+                        $hidden = !$this->itemMatchesFilters($item, $stateName);
                     @endphp
                     @if(!$hidden)
                     <div class="kb-card"
@@ -282,19 +291,28 @@
         }
     }
 
-    function kbDrop(event, toState) {
+    async function kbDrop(event, toState) {
         event.preventDefault();
         event.currentTarget.classList.remove('drag-over');
 
-        if (kbDragEl) kbDragEl.classList.remove('dragging');
+        const id = kbDragId;
+        const fromState = kbDragFrom;
+        const dragEl = kbDragEl;
+        if (dragEl) dragEl.classList.remove('dragging');
 
-        if (kbDragId !== null && kbDragFrom && kbDragFrom !== toState) {
-            @this.moveItem(kbDragId, kbDragFrom, toState);
-        }
-
-        kbDragId   = null;
+        kbDragId = null;
         kbDragFrom = null;
-        kbDragEl   = null;
+        kbDragEl = null;
+
+        if (id !== null && fromState && fromState !== toState) {
+            // Livewire owns the DOM. Wait for the server round-trip; there is
+            // no optimistic local move when persistence fails.
+            try {
+                await @this.call('moveItem', id, fromState, toState);
+            } catch (error) {
+                console.error('Falha ao mover lead:', error);
+            }
+        }
     }
 
     document.addEventListener('dragend', () => {

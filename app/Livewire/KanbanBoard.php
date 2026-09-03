@@ -9,25 +9,21 @@ use App\Models\Team;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Throwable;
 use Livewire\Component;
 
 class KanbanBoard extends Component
 {
-    public  $states = [
-        'new' => [],
-        'contacted' => [],
-        'qualified' => [],
-        'proposal' => [],
-        'negotiation' => [],
-        'won' => [],
-        'lost' => [],
-    ];
+    // Backwards-compatible alias for compiled Blade views. The canonical
+    // source remains Leads::SUPPORTED_STATUSES.
+    public const SUPPORTED_STATUSES = Leads::SUPPORTED_STATUSES;
+
+    public array $states = [];
 
     public $newStateName = '';
     public $viewMode = 'kanban'; // 'kanban' ou 'list'
     public $search = '';
     public $filterStatus = 'todos';
-    public $filterPriority = 'todos';
     public string $selectedTeamId = 'all';
 
     // Propriedades para ordenação
@@ -66,7 +62,7 @@ class KanbanBoard extends Component
                     fn ($query) => $query->where('company_id', auth()->user()->company_id)
                 ),
             ],
-            'leadStatus'               => ['required', 'string'],
+            'leadStatus'               => ['required', 'string', Rule::in(Leads::SUPPORTED_STATUSES)],
         ];
 
         if ($this->creatingNewClient) {
@@ -85,45 +81,60 @@ class KanbanBoard extends Component
         return $rules;
     }
 
-    public function addState()
+    public function moveItem($itemId, $fromState, $toState): void
     {
-        if (!empty($this->newStateName) && !isset($this->states[$this->newStateName])) {
-            $this->states[$this->newStateName] = [];
-            $this->newStateName = '';
-        }
-    }
+        $this->resetErrorBag('moveItem');
 
-    public function removeState($stateName)
-    {
-        if ($stateName !== 'Pendentes' && isset($this->states[$stateName])) {
-            // Mover todos os itens para "Pendentes" antes de remover o estado
-            foreach ($this->states[$stateName] as $item) {
-                $item['status'] = 'Pendentes';
-                $this->states['Pendentes'][] = $item;
-            }
-            unset($this->states[$stateName]);
-        }
-    }
+        $validator = validator(
+            ['fromState' => $fromState, 'toState' => $toState],
+            [
+                'fromState' => ['required', 'string', Rule::in(Leads::SUPPORTED_STATUSES)],
+                'toState' => ['required', 'string', Rule::in(Leads::SUPPORTED_STATUSES)],
+            ],
+            [
+                'fromState.in' => 'O estado de origem não é suportado.',
+                'toState.in' => 'O estado de destino não é suportado.',
+            ]
+        );
 
-    public function moveItem($itemId, $fromState, $toState)
-    {
-        if (!isset($this->states[$fromState]) || !isset($this->states[$toState]) || $fromState === $toState) {
+        if ($validator->fails()) {
+            $this->addError('moveItem', $validator->errors()->first());
+            $this->loadLeads();
+            return;
+        }
+
+        if ($fromState === $toState) {
             return;
         }
 
         $companyId = (int) auth()->user()->company_id;
-
-        // Do not trust the ID/state payload sent by the browser. Re-resolve
-        // the lead inside the authenticated tenant before changing anything.
         $lead = Leads::forCompany($companyId)->find($itemId);
 
-        if (!$lead || $lead->status !== $fromState) {
+        if (!$lead) {
+            $this->addError('moveItem', 'Lead não encontrado na empresa actual.');
+            $this->loadLeads();
             return;
         }
 
-        $lead->update(['status' => $toState]);
+        if ($lead->status !== $fromState) {
+            $this->addError('moveItem', 'O estado do lead foi alterado. O quadro foi actualizado.');
+            $this->loadLeads();
+            return;
+        }
 
-        $this->loadLeads();
+        try {
+            if (!$lead->update(['status' => $toState])) {
+                throw new \RuntimeException('A actualização do estado não foi persistida.');
+            }
+
+            // Re-read only after a successful write: the browser never gets a
+            // locally invented status; the board is rebuilt from persistence.
+            $this->loadLeads();
+        } catch (Throwable $e) {
+            report($e);
+            $this->addError('moveItem', 'Não foi possível guardar o novo estado do lead.');
+            $this->loadLeads();
+        }
     }
 
     public function openLeadForm(string $stateName): void
@@ -278,6 +289,33 @@ class KanbanBoard extends Component
         }
     }
 
+    public function updatedFilterStatus($value): void
+    {
+        if ($value !== 'todos' && !in_array($value, Leads::SUPPORTED_STATUSES, true)) {
+            $this->filterStatus = 'todos';
+        }
+    }
+
+    public function itemMatchesFilters(array $item, string $stateName): bool
+    {
+        if ($this->filterStatus !== 'todos' && $stateName !== $this->filterStatus) {
+            return false;
+        }
+
+        if (!filled($this->search)) {
+            return true;
+        }
+
+        $searchLower = mb_strtolower($this->search);
+        foreach (['title', 'client_name', 'reference', 'source', 'team_name'] as $field) {
+            if (str_contains(mb_strtolower((string) ($item[$field] ?? '')), $searchLower)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // Método para obter todos os itens achatados para a visualização de lista
     public function getFlattenedItemsProperty()
     {
@@ -289,29 +327,10 @@ class KanbanBoard extends Component
             }
         }
 
-        // Aplicar filtro de busca
-        if (!empty($this->search)) {
-            $allItems = array_filter($allItems, function($item) {
-                $searchLower = strtolower($this->search);
-                return str_contains(strtolower($item['title']), $searchLower) ||
-                    str_contains(strtolower($item['requester']), $searchLower) ||
-                    str_contains(strtolower($item['service']), $searchLower);
-            });
-        }
-
-        // Aplicar filtro de status
-        if ($this->filterStatus !== 'todos') {
-            $allItems = array_filter($allItems, function($item) {
-                return $item['status'] === $this->filterStatus;
-            });
-        }
-
-        // Aplicar filtro de prioridade
-        if ($this->filterPriority !== 'todos') {
-            $allItems = array_filter($allItems, function($item) {
-                return $item['priority'] === $this->filterPriority;
-            });
-        }
+        $allItems = array_filter(
+            $allItems,
+            fn ($item) => $this->itemMatchesFilters($item, $item['status'])
+        );
 
         // Ordenar
         usort($allItems, function($a, $b) {
@@ -330,6 +349,8 @@ class KanbanBoard extends Component
 
     public function mount()
     {
+        $this->states = array_fill_keys(Leads::SUPPORTED_STATUSES, []);
+
         $this->availableTeams = Team::forCompany((int) auth()->user()->company_id)
             ->orderBy('name')
             ->get(['id', 'name'])

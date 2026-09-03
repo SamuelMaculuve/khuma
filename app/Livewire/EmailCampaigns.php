@@ -7,6 +7,7 @@ use App\Models\Clients;
 use App\Models\EmailCampaign;
 use App\Models\EmailTemplate;
 use App\Models\Team;
+use App\Models\Leads;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
@@ -63,7 +64,7 @@ class EmailCampaigns extends Component
             'bodyHtml'              => 'required|string|min:10',
             'bodyText'              => 'nullable|string',
             'filters.lead_status'   => 'nullable|array',
-            'filters.lead_status.*' => 'in:new,contacted,qualified,proposal,negotiation,won,lost',
+            'filters.lead_status.*' => ['in:' . implode(',', Leads::SUPPORTED_STATUSES)],
         ];
     }
 

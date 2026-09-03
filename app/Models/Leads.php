@@ -13,6 +13,30 @@ class Leads extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Canonical persisted lead statuses. Keep this list aligned with the
+     * existing database enum; do not introduce configurable statuses here.
+     */
+    public const SUPPORTED_STATUSES = [
+        'new',
+        'contacted',
+        'qualified',
+        'proposal',
+        'negotiation',
+        'won',
+        'lost',
+    ];
+
+    public const STATUS_LABELS = [
+        'new' => 'Novo',
+        'contacted' => 'Contactado',
+        'qualified' => 'Qualificado',
+        'proposal' => 'Proposta',
+        'negotiation' => 'Negociação',
+        'won' => 'Ganho',
+        'lost' => 'Perdido',
+    ];
+
     protected $table = 'leads';
     protected $guarded = [];
 

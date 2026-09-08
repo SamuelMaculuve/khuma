@@ -72,7 +72,19 @@ class InstanceController extends Controller
 
     public function store(Request $request)
     {
-        $company = auth()->user()->company;
+        $user = auth()->user();
+        $company = $user->company;
+        $limit = $user->featureLimit('whatsapp_instances', null);
+
+        if ($limit !== null && $limit !== 'unlimited') {
+            $currentInstances = Instance::whereHas('user', fn ($query) => $query->where('company_id', $user->company_id))->count();
+
+            if ($currentInstances >= (int) $limit) {
+                return redirect()
+                    ->route('subscription.plans')
+                    ->with('warning', 'O limite de instâncias WhatsApp do seu plano foi atingido.');
+            }
+        }
 
         try {
             $response = Http::withHeaders([

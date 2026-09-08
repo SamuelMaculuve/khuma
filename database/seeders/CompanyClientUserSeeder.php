@@ -64,7 +64,7 @@ class CompanyClientUserSeeder extends Seeder
                         'reference' => 'LEAD-' . strtoupper(uniqid()),
                         'title' => "Lead {$l} - Client {$c}",
                         'description' => "Descrição da lead {$l}",
-                        'status' => collect(['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'])->random(),
+                        'status' => collect(Leads::SUPPORTED_STATUSES)->random(),
                         'value' => rand(5000, 100000),
                         'expected_close_date' => now()->addDays(rand(5, 90)),
                         'source' => collect(['website', 'whatsapp', 'email', 'referral'])->random(),

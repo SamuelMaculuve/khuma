@@ -3,16 +3,51 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Companies;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class Leads extends Model
 {
     use SoftDeletes;
 
+    /**
+     * Canonical persisted lead statuses. Keep this list aligned with the
+     * existing database enum; do not introduce configurable statuses here.
+     */
+    public const SUPPORTED_STATUSES = [
+        'new',
+        'contacted',
+        'qualified',
+        'proposal',
+        'negotiation',
+        'won',
+        'lost',
+    ];
+
+    public const STATUS_LABELS = [
+        'new' => 'Novo',
+        'contacted' => 'Contactado',
+        'qualified' => 'Qualificado',
+        'proposal' => 'Proposta',
+        'negotiation' => 'Negociação',
+        'won' => 'Ganho',
+        'lost' => 'Perdido',
+    ];
+
     protected $table = 'leads';
     protected $guarded = [];
+
+    /**
+     * Restrict queries to a tenant/company. Never use a browser-supplied
+     * resource ID without composing this scope in tenant-facing flows.
+     */
+    public function scopeForCompany(Builder $query, int $companyId): Builder
+    {
+        return $query->where($this->getTable() . '.company_id', $companyId);
+    }
 
     public function client(): BelongsTo
     {
@@ -21,7 +56,7 @@ class Leads extends Model
 
     public function messages(): HasMany
     {
-        return $this->hasMany(Messages::class);
+        return $this->hasMany(Messages::class, 'lead_id');
     }
 
     public function notes(): HasMany
@@ -32,6 +67,16 @@ class Leads extends Model
     public function histories(): HasMany
     {
         return $this->hasMany(LeadHistories::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Companies::class);
+    }
+
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
     }
 
     public function user(): BelongsTo

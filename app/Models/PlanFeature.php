@@ -12,9 +12,12 @@ class PlanFeature extends Model
         'feature_value'
     ];
 
+    protected $casts = [
+        'feature_value' => 'string',
+    ];
+
     public function plan()
     {
         return $this->belongsTo(Plan::class);
     }
 }
-

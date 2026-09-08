@@ -2,16 +2,20 @@
 
 namespace App\Livewire;
 
+use App\Jobs\SendLeadEmail;
 use App\Models\Messages;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
 class TicketSystem extends Component
 {
+    use WithFileUploads;
     public $lead;
 
     public $currentInstance;
@@ -28,6 +32,7 @@ class TicketSystem extends Component
     ];
 
     public $newMessage = '';
+    public $attachment = null;
     public $showSubtickets = false;
 
     public $leadId;
@@ -71,7 +76,7 @@ class TicketSystem extends Component
 
     public function mount($lead = null)
     {
-        $this->lead = $lead;
+        $this->lead = $lead->load('client', 'company');
 
         $this->ticket = [
             'id' => $lead->id,
@@ -124,31 +129,32 @@ class TicketSystem extends Component
     public function loadMessages()
     {
         // Carregar mensagens do banco de dados
-        $dbMessages = Messages::where('lead_id',$this->lead->id)->
-            where('sender_id', auth()->user()->id)
+        $this->messages = Messages::where('lead_id', $this->lead->id)
+            ->with(['sender', 'client'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($message) {
+                $isOutbound = $message->direction === 'outbound';
+                $author = $isOutbound
+                    ? (optional($message->sender)->name ?? 'Agente')
+                    : (optional($message->client)->name ?? optional($message->sender)->name ?? 'Cliente');
+
                 return [
-                    'id' => $message->id,
-                    'date' => $message->created_at->format('d \d\e F \d\e Y'),
-                    'author' => $message->client == null ? $message->sender->name : $message->client->name ?? "N/A",
-                    'time_ago' => $message->created_at->diffForHumans(),
-                    'content' => $message->content,
-                    'type' => $this->determineMessageType($message->channel, $message->metadata),
-                    'channel' => $message->channel,
-                    'direction' => $message->direction
+                    'id'        => $message->id,
+                    'date'      => $message->created_at->format('d \d\e F \d\e Y'),
+                    'created_at'=> $message->created_at->timestamp,
+                    'author'    => $author,
+                    'time_ago'  => $message->created_at->diffForHumans(),
+                    'content'   => $message->content,
+                    'type'       => $this->determineMessageType($message->channel, $message->metadata ?? null),
+                    'channel'   => $message->channel,
+                    'direction' => $message->direction,
+                    'attachment' => isset($message->metadata['attachment']) ? $message->metadata['attachment'] : null,
                 ];
             })
+            ->sortByDesc('created_at')
+            ->values()
             ->toArray();
-
-        // Combinar com mensagens estáticas (notes e status changes)
-        $this->messages = array_merge($dbMessages, $this->getStaticMessages());
-
-        // Ordenar por data
-        usort($this->messages, function ($a, $b) {
-            return strtotime($b['date']) - strtotime($a['date']);
-        });
     }
 
     private function determineMessageType($channel, $metadata)
@@ -190,53 +196,120 @@ class TicketSystem extends Component
         ];
     }
 
-    public function sendMessage()
+    public function sendMessage(): void
     {
         $this->validate([
-            'newMessage' => 'required|string|min:1',
-            'channel' => 'required|in:sms,whatsapp,email,phone,in_person',
+            'newMessage' => 'required_without:attachment|nullable|string',
+            'attachment' => 'nullable|file|max:10240',
+            'channel'    => 'required|in:sms,whatsapp,email,phone,in_person',
         ]);
 
-        try {
+        match ($this->channel) {
+            'email'    => $this->sendViaEmail(),
+            'whatsapp' => $this->sendViaWhatsApp(),
+            default    => $this->saveMessageOnly(),
+        };
 
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-                'token' => $this->currentInstance->token,
-            ])->post('https://free.uazapi.com/send/text', [
-                'number' => $this->lead->client->phone,
-                'text' => $this->newMessage
-            ]);
-            Log::info('Erro ao conectar: ',['Vamos ver Sucesso ENVIO']);
-            if ($response->successful()) {
-                $data = $response->json();
-                Log::info('Erro ao conectar: ',['DATA' =>  $data]);
-                // Criar nova mensagem no banco de dados
-                 Messages::create([
-                    'message_id' => $data['messageid'] ?? '',
-                    'message_to' => $this->lead->client->phone,
-                    'lead_id' => $this->lead->id,
-                    'sender_id' => Auth::id(),
-                    'channel' => $this->channel,
-                    'direction' => $this->direction,
-                    'content' => $this->newMessage,
-                ]);
+        $this->newMessage = '';
+        $this->attachment = null;
+        $this->loadMessages();
+    }
 
-                Log::info('Erro ao conectar: ',['Sucesso ENVIO' =>  $response->body()]);
+    private function sendViaEmail(): void
+    {
+        $client = $this->lead->client;
 
-            } else {
-                Log::info('Erro ao conectar: ',['ERRO ENVIO' =>  $response->body()]);
-            }
-        } catch (\Exception $e) {
-            Log::info('Erro ao conectar: ',['ERRO ENVIO'=>$e->getMessage()]);
+        if (empty($client->email)) {
+            session()->flash('error', 'Este cliente não tem endereço de email registado. Adicione um email ao perfil do cliente.');
+            return;
         }
 
-        // Resetar campo
-        $this->newMessage = '';
+        $smtpMid = Str::uuid() . '@' . ($this->lead->company->mail_subdomain ?? 'khuma') . '.' . config('services.mail_tenant.parent_domain', 'khuma.store');
 
-        // Recarregar mensagens
-        $this->loadMessages();
+        $attachmentPath = null;
+        $attachmentMeta = null;
+        if ($this->attachment) {
+            $dir  = 'lead-attachments/' . $this->lead->company_id;
+            $name = $this->attachment->getClientOriginalName();
+            $attachmentPath = $this->attachment->storeAs($dir, Str::uuid() . '-' . $name, 'public');
+            $attachmentMeta = [
+                'path' => $attachmentPath,
+                'name' => $name,
+                'mime' => $this->attachment->getMimeType(),
+                'size' => $this->attachment->getSize(),
+            ];
+        }
 
+        $message = Messages::create([
+            'message_id' => $smtpMid,
+            'message_to' => $client->email,
+            'lead_id'    => $this->lead->id,
+            'sender_id'  => Auth::id(),
+            'client_id'  => $client->id,
+            'channel'    => 'email',
+            'direction'  => 'outbound',
+            'content'    => $this->newMessage ?? '',
+            'metadata'   => $attachmentMeta ? json_encode(['attachment' => $attachmentMeta]) : null,
+        ]);
+
+        SendLeadEmail::dispatch(
+            messageId:      $message->id,
+            toEmail:        $client->email,
+            clientName:     $client->name,
+            messageContent: $this->newMessage ?? '',
+            leadReference:  $this->lead->reference,
+            agentName:      Auth::user()->name,
+            companyId:      $this->lead->company_id,
+            leadId:         $this->lead->id,
+            smtpMessageId:  $smtpMid,
+            attachmentPath: $attachmentPath,
+            attachmentName: $attachmentMeta['name'] ?? null,
+        );
+    }
+
+    private function sendViaWhatsApp(): void
+    {
+        try {
+            $response = Http::withHeaders([
+                'Accept'       => 'application/json',
+                'Content-Type' => 'application/json',
+                'token'        => $this->currentInstance->token,
+            ])->post('https://free.uazapi.com/send/text', [
+                'number' => $this->lead->client->phone,
+                'text'   => $this->newMessage,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                Messages::create([
+                    'message_id' => $data['messageid'] ?? '',
+                    'message_to' => $this->lead->client->phone,
+                    'lead_id'    => $this->lead->id,
+                    'sender_id'  => Auth::id(),
+                    'channel'    => $this->channel,
+                    'direction'  => $this->direction,
+                    'content'    => $this->newMessage,
+                ]);
+            } else {
+                Log::error('WhatsApp send failed', ['body' => $response->body()]);
+            }
+        } catch (\Exception $e) {
+            Log::error('WhatsApp send exception', ['error' => $e->getMessage()]);
+        }
+    }
+
+    private function saveMessageOnly(): void
+    {
+        Messages::create([
+            'message_id' => 'manual-' . Str::uuid(),
+            'message_to' => $this->lead->client->phone ?? '',
+            'lead_id'    => $this->lead->id,
+            'sender_id'  => Auth::id(),
+            'client_id'  => optional($this->lead->client)->id,
+            'channel'    => $this->channel,
+            'direction'  => $this->direction,
+            'content'    => $this->newMessage,
+        ]);
     }
 
     public function markAsRead($messageId)

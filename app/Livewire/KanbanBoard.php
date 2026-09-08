@@ -2,100 +2,276 @@
 
 namespace App\Livewire;
 
+use App\Models\Clients;
 use App\Models\Leads;
 use App\Models\Messages;
+use App\Models\Team;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Throwable;
 use Livewire\Component;
 
 class KanbanBoard extends Component
 {
-    public  $states = [
-        'new' => [],
-        'contacted' => [],
-        'qualified' => [],
-        'proposal' => [],
-        'negotiation' => [],
-        'won' => [],
-        'lost' => [],
-    ];
+    // Backwards-compatible alias for compiled Blade views. The canonical
+    // source remains Leads::SUPPORTED_STATUSES.
+    public const SUPPORTED_STATUSES = Leads::SUPPORTED_STATUSES;
+
+    public array $states = [];
 
     public $newStateName = '';
     public $viewMode = 'kanban'; // 'kanban' ou 'list'
     public $search = '';
     public $filterStatus = 'todos';
-    public $filterPriority = 'todos';
+    public string $selectedTeamId = 'all';
 
     // Propriedades para ordenação
     public $sortField = 'id';
     public $sortDirection = 'desc';
 
-    public function addState()
+    public bool $showLeadForm = false;
+    public string $leadStatus = 'new';
+    public ?int $lead_client_id = null;
+    public string $lead_title = '';
+    public string $lead_description = '';
+    public ?string $lead_value = null;
+    public ?string $lead_expected_close_date = null;
+    public string $lead_source = '';
+    public ?int $lead_team_id = null;
+
+    public $availableClients = [];
+    public $availableTeams = [];
+
+    public bool $creatingNewClient = false;
+    public string $new_client_name  = '';
+    public string $new_client_email = '';
+    public string $new_client_phone = '';
+
+    protected function rules(): array
     {
-        if (!empty($this->newStateName) && !isset($this->states[$this->newStateName])) {
-            $this->states[$this->newStateName] = [];
-            $this->newStateName = '';
+        $rules = [
+            'lead_title'               => ['required', 'string', 'max:255'],
+            'lead_description'         => ['nullable', 'string'],
+            'lead_value'               => ['nullable', 'numeric', 'min:0'],
+            'lead_expected_close_date' => ['nullable', 'date'],
+            'lead_source'              => ['nullable', 'string', 'max:255'],
+            'lead_team_id'             => [
+                'nullable',
+                Rule::exists('teams', 'id')->where(
+                    fn ($query) => $query->where('company_id', auth()->user()->company_id)
+                ),
+            ],
+            'leadStatus'               => ['required', 'string', Rule::in(Leads::SUPPORTED_STATUSES)],
+        ];
+
+        if ($this->creatingNewClient) {
+            $rules['new_client_name']  = ['required', 'string', 'max:255'];
+            $rules['new_client_email'] = ['nullable', 'email', 'max:255'];
+            $rules['new_client_phone'] = ['nullable', 'string', 'max:50'];
+        } else {
+            $rules['lead_client_id'] = [
+                'required',
+                Rule::exists('clients', 'id')->where(
+                    fn ($query) => $query->where('company_id', auth()->user()->company_id)
+                ),
+            ];
         }
+
+        return $rules;
     }
 
-    public function removeState($stateName)
+    public function moveItem($itemId, $fromState, $toState): void
     {
-        if ($stateName !== 'Pendentes' && isset($this->states[$stateName])) {
-            // Mover todos os itens para "Pendentes" antes de remover o estado
-            foreach ($this->states[$stateName] as $item) {
-                $item['status'] = 'Pendentes';
-                $this->states['Pendentes'][] = $item;
-            }
-            unset($this->states[$stateName]);
-        }
-    }
+        $this->resetErrorBag('moveItem');
 
-    public function moveItem($itemId, $fromState, $toState)
-    {
-        if (!isset($this->states[$fromState]) || !isset($this->states[$toState]) || $fromState === $toState) {
+        $validator = validator(
+            ['fromState' => $fromState, 'toState' => $toState],
+            [
+                'fromState' => ['required', 'string', Rule::in(Leads::SUPPORTED_STATUSES)],
+                'toState' => ['required', 'string', Rule::in(Leads::SUPPORTED_STATUSES)],
+            ],
+            [
+                'fromState.in' => 'O estado de origem não é suportado.',
+                'toState.in' => 'O estado de destino não é suportado.',
+            ]
+        );
+
+        if ($validator->fails()) {
+            $this->addError('moveItem', $validator->errors()->first());
+            $this->loadLeads();
             return;
         }
 
-        // Encontrar o item no estado de origem
-        $itemIndex = null;
-        $itemToMove = null;
-
-        foreach ($this->states[$fromState] as $index => $item) {
-            if ($item['id'] == $itemId) {
-                $itemIndex = $index;
-                $itemToMove = $item;
-                $itemToMove['status'] = $toState;
-                break;
-            }
-        }
-
-        if ($itemToMove !== null) {
-            // Remover do estado de origem
-            array_splice($this->states[$fromState], $itemIndex, 1);
-
-            // Adicionar ao estado de destino
-            $this->states[$toState][] = $itemToMove;
-        }
-    }
-
-    public function addNewItem($stateName)
-    {
-        if (!isset($this->states[$stateName])) {
+        if ($fromState === $toState) {
             return;
         }
 
-        $newId = rand(5000, 9999);
-//        $this->states[$stateName][] = [
-//            'id' => $newId,
-//            'title' => 'Novo Item #' . $newId,
-//            'number' => $newId,
-//            'requester' => 'Novo Solicitante',
-//            'link' => 'https://www.example.com',
-//            'time' => 'Agora',
-//            'service' => 'SRV_NOVO',
-//            'icon' => 'novo',
-//            'priority' => 'média',
-//            'status' => $stateName
-//        ];
+        $companyId = (int) auth()->user()->company_id;
+        $lead = Leads::forCompany($companyId)->find($itemId);
+
+        if (!$lead) {
+            $this->addError('moveItem', 'Lead não encontrado na empresa actual.');
+            $this->loadLeads();
+            return;
+        }
+
+        if ($lead->status !== $fromState) {
+            $this->addError('moveItem', 'O estado do lead foi alterado. O quadro foi actualizado.');
+            $this->loadLeads();
+            return;
+        }
+
+        try {
+            if (!$lead->update(['status' => $toState])) {
+                throw new \RuntimeException('A actualização do estado não foi persistida.');
+            }
+
+            // Re-read only after a successful write: the browser never gets a
+            // locally invented status; the board is rebuilt from persistence.
+            $this->loadLeads();
+        } catch (Throwable $e) {
+            report($e);
+            $this->addError('moveItem', 'Não foi possível guardar o novo estado do lead.');
+            $this->loadLeads();
+        }
+    }
+
+    public function openLeadForm(string $stateName): void
+    {
+        if (! array_key_exists($stateName, $this->states)) {
+            return;
+        }
+
+        $companyId = auth()->user()->company_id;
+
+        $this->resetLeadForm();
+        $this->leadStatus = $stateName;
+        $this->lead_team_id = null;
+        if ($this->selectedTeamId !== 'all') {
+            $teamId = (int) $this->selectedTeamId;
+            if (Team::forCompany((int) $companyId)->whereKey($teamId)->exists()) {
+                $this->lead_team_id = $teamId;
+            }
+        }
+
+        $this->availableClients = Clients::forCompany((int) $companyId)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->toArray();
+        $this->showLeadForm = true;
+    }
+
+    public function closeLeadForm(): void
+    {
+        $this->showLeadForm = false;
+        $this->resetLeadForm();
+    }
+
+    public function toggleNewClient(): void
+    {
+        $this->creatingNewClient = ! $this->creatingNewClient;
+        $this->resetValidation(['lead_client_id', 'new_client_name', 'new_client_email', 'new_client_phone']);
+
+        if ($this->creatingNewClient) {
+            $this->lead_client_id = null;
+        } else {
+            $this->reset(['new_client_name', 'new_client_email', 'new_client_phone']);
+        }
+    }
+
+    public function saveLead(): void
+    {
+        $data = $this->validate();
+
+        $user      = auth()->user();
+        $companyId = $user->company_id;
+
+        if ($this->creatingNewClient) {
+            $client = Clients::create([
+                'company_id' => $companyId,
+                'name'       => $data['new_client_name'],
+                'email'      => $data['new_client_email'] ?: null,
+                'phone'      => $data['new_client_phone'] ?: null,
+            ]);
+            $clientId = $client->id;
+
+            $this->availableClients = Clients::forCompany((int) $companyId)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->toArray();
+        } else {
+            // Resolve the selected client through the current tenant, rather
+            // than trusting a global client ID from the browser.
+            $client = Clients::forCompany((int) $companyId)->findOrFail($data['lead_client_id']);
+            $clientId = $client->id;
+        }
+
+        if (!empty($data['lead_team_id'])) {
+            Team::forCompany((int) $companyId)->findOrFail((int) $data['lead_team_id']);
+        }
+
+        $lead = Leads::create([
+            'client_id'           => $clientId,
+            'company_id'          => $companyId,
+            'team_id'             => $data['lead_team_id'] ?? null,
+            'reference'           => 'LD-' . $companyId . '-' . strtoupper(Str::random(8)),
+            'title'               => $data['lead_title'],
+            'description'         => $data['lead_description'] ?: null,
+            'status'              => $data['leadStatus'],
+            'value'               => $data['lead_value'] !== null && $data['lead_value'] !== '' ? $data['lead_value'] : null,
+            'expected_close_date' => $data['lead_expected_close_date'] ?: null,
+            'source'              => $data['lead_source'] ?: null,
+        ]);
+        $lead->load('team');
+
+        if (array_key_exists($lead->status, $this->states)) {
+            $clientName = $this->creatingNewClient
+                ? ($data['new_client_name'] ?? '')
+                : (Clients::forCompany((int) $companyId)->find($clientId)?->name ?? '');
+
+            $this->states[$lead->status][] = [
+                'id'          => $lead->id,
+                'client_id'   => $lead->client_id,
+                'client_name' => $clientName,
+                'reference'   => $lead->reference,
+                'title'       => $lead->title,
+                'description' => $lead->description,
+                'team_name'   => $lead->team?->name,
+                'status'      => $lead->status,
+                'value'       => $lead->value,
+                'source'      => $lead->source,
+                'time'        => $lead->expected_close_date
+                    ? Carbon::parse($lead->expected_close_date)->diffForHumans()
+                    : null,
+            ];
+        }
+
+        $this->closeLeadForm();
+        $this->dispatch('lead-created', leadId: $lead->id);
+    }
+
+    private function resetLeadForm(): void
+    {
+        $this->reset([
+            'lead_client_id',
+            'lead_title',
+            'lead_description',
+            'lead_value',
+            'lead_expected_close_date',
+            'lead_source',
+            'lead_team_id',
+            'creatingNewClient',
+            'new_client_name',
+            'new_client_email',
+            'new_client_phone',
+        ]);
+        $this->resetValidation();
+    }
+
+    public function updatedSelectedTeamId(): void
+    {
+        $this->loadLeads();
     }
 
     public function switchView($mode)
@@ -113,6 +289,33 @@ class KanbanBoard extends Component
         }
     }
 
+    public function updatedFilterStatus($value): void
+    {
+        if ($value !== 'todos' && !in_array($value, Leads::SUPPORTED_STATUSES, true)) {
+            $this->filterStatus = 'todos';
+        }
+    }
+
+    public function itemMatchesFilters(array $item, string $stateName): bool
+    {
+        if ($this->filterStatus !== 'todos' && $stateName !== $this->filterStatus) {
+            return false;
+        }
+
+        if (!filled($this->search)) {
+            return true;
+        }
+
+        $searchLower = mb_strtolower($this->search);
+        foreach (['title', 'client_name', 'reference', 'source', 'team_name'] as $field) {
+            if (str_contains(mb_strtolower((string) ($item[$field] ?? '')), $searchLower)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     // Método para obter todos os itens achatados para a visualização de lista
     public function getFlattenedItemsProperty()
     {
@@ -124,29 +327,10 @@ class KanbanBoard extends Component
             }
         }
 
-        // Aplicar filtro de busca
-        if (!empty($this->search)) {
-            $allItems = array_filter($allItems, function($item) {
-                $searchLower = strtolower($this->search);
-                return str_contains(strtolower($item['title']), $searchLower) ||
-                    str_contains(strtolower($item['requester']), $searchLower) ||
-                    str_contains(strtolower($item['service']), $searchLower);
-            });
-        }
-
-        // Aplicar filtro de status
-        if ($this->filterStatus !== 'todos') {
-            $allItems = array_filter($allItems, function($item) {
-                return $item['status'] === $this->filterStatus;
-            });
-        }
-
-        // Aplicar filtro de prioridade
-        if ($this->filterPriority !== 'todos') {
-            $allItems = array_filter($allItems, function($item) {
-                return $item['priority'] === $this->filterPriority;
-            });
-        }
+        $allItems = array_filter(
+            $allItems,
+            fn ($item) => $this->itemMatchesFilters($item, $item['status'])
+        );
 
         // Ordenar
         usort($allItems, function($a, $b) {
@@ -165,33 +349,65 @@ class KanbanBoard extends Component
 
     public function mount()
     {
-        $leads = Leads::query()->where('company_id', auth()->user()->company_id)->get();
+        $this->states = array_fill_keys(Leads::SUPPORTED_STATUSES, []);
 
+        $this->availableTeams = Team::forCompany((int) auth()->user()->company_id)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->toArray();
+
+        $this->loadLeads();
+    }
+
+    private function loadLeads(): void
+    {
+        $this->resetStates();
+
+        $companyId = (int) auth()->user()->company_id;
+
+        $leads = Leads::with([
+                'client' => fn ($query) => $query->where('company_id', $companyId),
+                'team' => fn ($query) => $query->where('company_id', $companyId),
+            ])
+            ->forCompany($companyId)
+            ->when($this->selectedTeamId !== 'all', function ($query) use ($companyId) {
+                $teamId = (int) $this->selectedTeamId;
+
+                if (! Team::forCompany($companyId)->whereKey($teamId)->exists()) {
+                    $this->selectedTeamId = 'all';
+                    return;
+                }
+
+                $query->where('team_id', $teamId);
+            })
+            ->get();
         foreach ($leads as $lead) {
-
-            // fallback de segurança
             if (! array_key_exists($lead->status, $this->states)) {
                 continue;
             }
 
             $this->states[$lead->status][] = [
-                'id' => $lead->id,
-                'client_id' => $lead->client_id,
-                'reference' => $lead->reference,
-                'title' => $lead->title,
+                'id'          => $lead->id,
+                'client_id'   => $lead->client_id,
+                'client_name' => optional($lead->client)->name,
+                'reference'   => $lead->reference,
+                'title'       => $lead->title,
                 'description' => $lead->description,
-                'status' => $lead->status,
-
-                'value' => $lead->value,
-                'expected_' => $lead->expected_,
-                'close_date' => $lead->close_date,
-                'source' => $lead->source,
-
-                // opcional p/ UI
-                'time' => $lead->close_date
-                    ? Carbon::parse($lead->close_date)->diffForHumans()
+                'team_name'   => $lead->team?->name,
+                'status'      => $lead->status,
+                'value'       => $lead->value,
+                'source'      => $lead->source,
+                'time'        => $lead->expected_close_date
+                    ? Carbon::parse($lead->expected_close_date)->diffForHumans()
                     : null,
             ];
+        }
+    }
+
+    private function resetStates(): void
+    {
+        foreach (array_keys($this->states) as $state) {
+            $this->states[$state] = [];
         }
     }
 

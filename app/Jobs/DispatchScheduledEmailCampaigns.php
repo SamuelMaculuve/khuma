@@ -4,17 +4,24 @@ namespace App\Jobs;
 
 use App\Models\EmailCampaign;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class DispatchScheduledEmailCampaigns implements ShouldQueue
+class DispatchScheduledEmailCampaigns implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 120;
     public int $tries = 1;
+    public int $uniqueFor = 120;
+
+    public function uniqueId(): string
+    {
+        return 'scheduled-email-campaigns-dispatcher';
+    }
 
     public function handle(): void
     {
